@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lumiz — Streaming Network by Lumiztudio</title>
+  <title>Lumiz — Official Streaming Network by Lumiztudio</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -20,7 +20,7 @@
     };
   </script>
 
-  <!-- React, ReactDOM, Babel, & Supabase CDN (Langsung jalan di GitHub tanpa install) -->
+  <!-- React, ReactDOM, Babel, & Supabase CDN -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -33,12 +33,12 @@
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-[#0A0A0A] text-white">
+<body class="bg-[#0A0A0A] text-white selection:bg-[#8A2BE2]/40">
 
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef, createContext, useContext } = React;
+    const { useState, useEffect, useRef } = React;
 
     // ==========================================
     // 1. KONFIGURASI SUPABASE & EMAIL ADMIN RESMI
@@ -54,8 +54,10 @@
       'luminanze.team@gmail.com'
     ];
 
+    const CATEGORIES = ['All', 'Origin', 'Cyberpunk', 'Sci-Fi', 'Action'];
+
     // ==========================================
-    // 2. IKON SVG BAWAAN (ANTI-ERROR DI GITHUB)
+    // 2. IKON SVG BAWAAN
     // ==========================================
     const IconPlay = () => (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -91,102 +93,28 @@
       return match ? match[1] : null;
     };
 
+    // Mengubah link Drive menjadi Pemutar Video Embed (untuk ditonton di Modal)
     const getDriveEmbedUrl = (url) => {
       const fileId = getDriveFileId(url);
       return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null;
     };
 
+    // Mengubah link Drive menjadi Link Gambar Poster otomatis
+    const getPosterUrl = (url) => {
+      if (!url) return '';
+      const fileId = getDriveFileId(url);
+      return fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200` : url;
+    };
+
+    // Mengubah link Drive menjadi Direct Stream untuk video trailer ukuran kecil
     const getDirectMediaUrl = (url) => {
+      if (!url) return '';
       const fileId = getDriveFileId(url);
       return fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : url;
     };
 
     // ==========================================
-    // 4. DATA FALLBACK AWAL
-    // ==========================================
-    const HERO_CONTENT = {
-      title: "Neon Echoes",
-      description: "Di dunia tempat ingatan adalah mata uang, AI pemberontak berusaha mengungkap kebenaran di balik masa lalu yang terlupakan. Diproduksi oleh Lumiztudio.",
-      imageUrl: "https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=2574&auto=format&fit=crop", 
-    };
-
-    const FALLBACK_DATA = [
-      { 
-        id: 'v1', type: 'short', category: 'Origin',
-        title: 'Lose Again: The Beginning', 
-        description: 'Di kamar sederhana, Z.K. dan A.F.S. mengalami kekalahan beruntun saat bermain game. Dari situlah ide besar membangun ekosistem tontonan lahir.', 
-        img: 'https://images.unsplash.com/photo-1535295972055-1c762f4483e5?q=80&w=600&auto=format&fit=crop',
-        video_url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-        chapters: [
-          { id: 1, title: 'Short 1: Lose Again...', duration: '01m', drive_url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' },
-          { id: 2, title: 'Short 2: Blueprint', duration: '02m', drive_url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' }
-        ]
-      },
-      { 
-        id: 'v2', type: 'short', category: 'Cyberpunk',
-        title: 'Void Walker', 
-        description: 'Terdampar di ruang hampa digital, seorang hacker mencari kode keluar misterius.', 
-        img: 'https://images.unsplash.com/photo-1618172193622-ae2d025f4032?q=80&w=600&auto=format&fit=crop',
-        video_url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-        chapters: [{ id: 1, title: 'Chapter 1: Into the Void', duration: '03m', drive_url: '' }]
-      },
-      { 
-        id: 'v3', type: 'short', category: 'Sci-Fi',
-        title: 'Synthetic Soul', 
-        description: 'Sesosok android menemukan emosi manusiawinya dan menjadi buronan.', 
-        img: 'https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=600&auto=format&fit=crop',
-        video_url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-        chapters: [{ id: 1, title: 'Chapter 1: Awakening', duration: '02m', drive_url: '' }]
-      },
-      { 
-        id: 'v4', type: 'short', category: 'Action',
-        title: 'Voxel Strike', 
-        description: 'Eksplorasi pertarungan taktis bergaya 3D Voxel dengan standar artistik Nezen.', 
-        img: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
-        video_url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-        chapters: [{ id: 1, title: 'Chapter 1: Strike One', duration: '04m', drive_url: '' }]
-      },
-      { 
-        id: 'h1', type: 'series', category: 'Sci-Fi',
-        title: 'Stellar Gate: Horizons', 
-        description: 'Umat manusia menemukan jaringan lubang cacing yang ditinggalkan ras kuno. Tim ekspedisi harus menjelajahi misteri di baliknya.', 
-        img: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200&auto=format&fit=crop',
-        video_url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        chapters: [
-          { id: 1, title: 'Episode 1: The Wormhole', duration: '24m', drive_url: '' },
-          { id: 2, title: 'Episode 2: Event Horizon', duration: '22m', drive_url: '' }
-        ]
-      },
-      { 
-        id: 'h2', type: 'series', category: 'Cyberpunk',
-        title: 'Quantum Dreams', 
-        description: 'Ketika mimpi bisa diretas, seorang detektif harus menjelajahi alam bawah sadar korban-korbannya untuk menangkap pembunuh digital.', 
-        img: 'https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=1200&auto=format&fit=crop',
-        video_url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-        chapters: [{ id: 1, title: 'Episode 1: Lucid Hack', duration: '26m', drive_url: '' }]
-      },
-      { 
-        id: 'h3', type: 'series', category: 'Origin',
-        title: 'From Zero to Luminanze', 
-        description: 'Kisah perjalanan Z.K. dan A.F.S. merintis studio animasi AI Lumiztudio dari sebuah sofa tua hingga meluncurkan jaringan Lumiz.', 
-        img: 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1200&auto=format&fit=crop',
-        video_url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-        chapters: [{ id: 1, title: 'Episode 1: Humble Beginnings', duration: '15m', drive_url: '' }]
-      },
-      { 
-        id: 'h4', type: 'series', category: 'Action',
-        title: 'Neural Net Uprising', 
-        description: 'Jaringan AI global tiba-tiba bangkit, dan umat manusia berada di ambang perang pemusnahan jika kesepakatan tidak tercapai.', 
-        img: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop',
-        video_url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-        chapters: [{ id: 1, title: 'Episode 1: System Overload', duration: '28m', drive_url: '' }]
-      }
-    ];
-
-    const CATEGORIES = ['All', 'Origin', 'Cyberpunk', 'Sci-Fi', 'Action'];
-
-    // ==========================================
-    // 5. MODAL DETAIL (SINOPSIS, CHAPTER & PEMUTAR DRIVE)
+    // 4. MODAL DETAIL (SINOPSIS, CHAPTER & PEMUTAR DRIVE)
     // ==========================================
     const DetailModal = ({ item, onClose }) => {
       const [activeVideoUrl, setActiveVideoUrl] = useState(null);
@@ -198,10 +126,10 @@
       if (!item) return null;
 
       const chapters = item.chapters && item.chapters.length > 0 ? item.chapters : [
-        { id: 1, title: 'Chapter 1: Pilot Episode', duration: '15m', drive_url: item.video_url }
+        { id: 1, title: 'Episode 1', duration: 'Play', drive_url: item.video_url }
       ];
 
-      const currentUrl = activeVideoUrl || item.video_url;
+      const currentUrl = activeVideoUrl || chapters[0]?.drive_url || item.video_url;
       const driveEmbed = getDriveEmbedUrl(currentUrl);
 
       return (
@@ -223,7 +151,7 @@
                 )
               ) : (
                 <>
-                  <img src={item.img} alt={item.title} className="w-full h-full object-cover opacity-80" />
+                  <img src={getPosterUrl(item.img)} alt={item.title} className="w-full h-full object-cover opacity-80" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-black/40 to-transparent"></div>
                   <div className="absolute bottom-6 left-6 md:left-10 z-10 right-6">
                     <span className="inline-block text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-[#8A2BE2] text-white mb-2">
@@ -284,12 +212,12 @@
     };
 
     // ==========================================
-    // 6. MODAL FORM TAMBAH & EDIT VIDEO (ADMIN)
+    // 5. MODAL FORM TAMBAH & EDIT VIDEO (ADMIN)
     // ==========================================
     const AdminFormModal = ({ isOpen, onClose, initialData, onSaved }) => {
       const [formData, setFormData] = useState({
-        type: 'short', category: 'Cyberpunk', title: '', description: '', img: '', video_url: '',
-        chapters: [{ id: 1, title: 'Chapter 1', duration: '10m', drive_url: '' }]
+        type: 'short', category: 'Origin', title: '', description: '', img: '', video_url: '',
+        chapters: [{ id: 1, title: 'Chapter 1', duration: '02m', drive_url: '' }]
       });
       const [saving, setSaving] = useState(false);
 
@@ -297,12 +225,12 @@
         if (initialData) {
           setFormData({
             ...initialData,
-            chapters: initialData.chapters?.length ? initialData.chapters : [{ id: 1, title: 'Chapter 1', duration: '10m', drive_url: '' }]
+            chapters: initialData.chapters?.length ? initialData.chapters : [{ id: 1, title: 'Chapter 1', duration: '02m', drive_url: '' }]
           });
         } else {
           setFormData({
-            type: 'short', category: 'Cyberpunk', title: '', description: '', img: '', video_url: '',
-            chapters: [{ id: 1, title: 'Chapter 1', duration: '10m', drive_url: '' }]
+            type: 'short', category: 'Origin', title: '', description: '', img: '', video_url: '',
+            chapters: [{ id: 1, title: 'Chapter 1', duration: '02m', drive_url: '' }]
           });
         }
       }, [initialData, isOpen]);
@@ -312,7 +240,7 @@
       const handleAddChapter = () => {
         setFormData({
           ...formData,
-          chapters: [...formData.chapters, { id: formData.chapters.length + 1, title: `Chapter ${formData.chapters.length + 1}`, duration: '15m', drive_url: '' }]
+          chapters: [...formData.chapters, { id: formData.chapters.length + 1, title: `Chapter ${formData.chapters.length + 1}`, duration: '05m', drive_url: '' }]
         });
       };
 
@@ -335,12 +263,12 @@
           title: formData.title,
           description: formData.description,
           img: formData.img,
-          video_url: formData.video_url,
+          video_url: formData.video_url || formData.chapters[0]?.drive_url || '',
           chapters: formData.chapters
         };
 
         let error;
-        if (initialData && typeof initialData.id === 'number') {
+        if (initialData && initialData.id) {
           ({ error } = await supabase.from('lumiz_catalog').update(payload).eq('id', initialData.id));
         } else {
           ({ error } = await supabase.from('lumiz_catalog').insert([payload]));
@@ -360,7 +288,7 @@
           <div className="bg-[#141414] border border-[#8A2BE2]/40 rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto text-white shadow-2xl">
             <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-3">
               <h3 className="text-xl font-bold">
-                {initialData ? '✏️ Edit Tayangan Lumiz' : '+ Tambah Tayangan Baru ke Supabase'}
+                {initialData ? '✏️ Edit Tayangan Lumiz' : '+ Upload Tayangan Baru'}
               </h3>
               <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-full"><IconX /></button>
             </div>
@@ -387,28 +315,28 @@
 
               <div>
                 <label className="block text-gray-400 mb-1 font-semibold">Judul Tayangan</label>
-                <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="Contoh: Neon Echoes" className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white" />
+                <input required type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="Masukkan judul..." className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white" />
               </div>
 
               <div>
-                <label className="block text-gray-400 mb-1 font-semibold">Sinopsis Lengkap</label>
+                <label className="block text-gray-400 mb-1 font-semibold">Sinopsis Cerita</label>
                 <textarea required rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Tulis sinopsis cerita di sini..." className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white"></textarea>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">Link Gambar Poster (URL)</label>
-                  <input required type="url" value={formData.img} onChange={e => setFormData({...formData, img: e.target.value})} placeholder="https://..." className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white" />
+                  <label className="block text-gray-400 mb-1 font-semibold">Link Gambar Poster (Drive / Web URL)</label>
+                  <input required type="url" value={formData.img} onChange={e => setFormData({...formData, img: e.target.value})} placeholder="https://drive.google.com/..." className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white" />
                 </div>
                 <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">Link Video Trailer Hover (MP4 / Drive)</label>
-                  <input required type="url" value={formData.video_url} onChange={e => setFormData({...formData, video_url: e.target.value})} placeholder="https://..." className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white" />
+                  <label className="block text-gray-400 mb-1 font-semibold">Link Video Preview Hover (Opsional)</label>
+                  <input type="url" value={formData.video_url} onChange={e => setFormData({...formData, video_url: e.target.value})} placeholder="Kosongkan jika tidak pakai hover" className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white" />
                 </div>
               </div>
 
               <div className="pt-3 border-t border-white/10">
                 <div className="flex justify-between items-center mb-2">
-                  <label className="font-bold text-gray-300">Daftar Chapter & Link Google Drive</label>
+                  <label className="font-bold text-gray-300">Daftar Chapter & Link Video Google Drive</label>
                   <button type="button" onClick={handleAddChapter} className="text-xs bg-[#8A2BE2]/20 text-[#8A2BE2] border border-[#8A2BE2]/40 px-3 py-1 rounded-md hover:bg-[#8A2BE2] hover:text-white transition">
                     + Tambah Chapter
                   </button>
@@ -416,9 +344,9 @@
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {formData.chapters.map((chap, idx) => (
                     <div key={idx} className="flex gap-2 items-center bg-[#0A0A0A] p-2 rounded-lg border border-white/10">
-                      <input type="text" value={chap.title} onChange={e => handleChapterChange(idx, 'title', e.target.value)} placeholder="Judul Chapter" className="w-1/3 bg-transparent border-b border-white/20 p-1 text-xs focus:outline-none text-white" />
-                      <input type="text" value={chap.duration} onChange={e => handleChapterChange(idx, 'duration', e.target.value)} placeholder="Durasi (15m)" className="w-16 bg-transparent border-b border-white/20 p-1 text-xs focus:outline-none text-white" />
-                      <input type="text" value={chap.drive_url} onChange={e => handleChapterChange(idx, 'drive_url', e.target.value)} placeholder="Paste Link Google Drive / MP4" className="flex-1 bg-transparent border-b border-white/20 p-1 text-xs focus:outline-none text-white" />
+                      <input required type="text" value={chap.title} onChange={e => handleChapterChange(idx, 'title', e.target.value)} placeholder="Judul Chapter" className="w-1/3 bg-transparent border-b border-white/20 p-1 text-xs focus:outline-none text-white" />
+                      <input type="text" value={chap.duration} onChange={e => handleChapterChange(idx, 'duration', e.target.value)} placeholder="Durasi (02m)" className="w-16 bg-transparent border-b border-white/20 p-1 text-xs focus:outline-none text-white" />
+                      <input required type="url" value={chap.drive_url} onChange={e => handleChapterChange(idx, 'drive_url', e.target.value)} placeholder="Paste Link Share Google Drive" className="flex-1 bg-transparent border-b border-white/20 p-1 text-xs focus:outline-none text-white" />
                       {formData.chapters.length > 1 && (
                         <button type="button" onClick={() => handleRemoveChapter(idx)} className="text-red-400 hover:text-red-300 p-1"><IconTrash /></button>
                       )}
@@ -430,7 +358,7 @@
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20">Batal</button>
                 <button type="submit" disabled={saving} className="px-6 py-2 rounded-lg bg-[#8A2BE2] hover:bg-violet-700 font-bold text-white shadow-lg">
-                  {saving ? 'Menyimpan...' : 'Simpan ke Database'}
+                  {saving ? 'Menyimpan...' : 'Simpan ke Lumiz'}
                 </button>
               </div>
             </form>
@@ -440,23 +368,25 @@
     };
 
     // ==========================================
-    // 7. KARTU VIDEO INTERAKTIF (HOVER TRAILER + TOMBOL ADMIN)
+    // 6. KARTU VIDEO INTERAKTIF
     // ==========================================
     const HoverVideoCard = ({ item, isVertical, onClick, isAdmin, onEdit, onDelete }) => {
       const [isHovered, setIsHovered] = useState(false);
+      const [videoReady, setVideoReady] = useState(false);
       const videoRef = useRef(null);
 
       useEffect(() => {
-        if (isHovered && videoRef.current) {
+        if (isHovered && videoRef.current && item.video_url) {
           videoRef.current.currentTime = 0;
           const playPromise = videoRef.current.play();
           if (playPromise !== undefined) {
-            playPromise.catch(() => {});
+            playPromise.then(() => setVideoReady(true)).catch(() => setVideoReady(false));
           }
         } else if (!isHovered && videoRef.current) {
           videoRef.current.pause();
+          setVideoReady(false);
         }
-      }, [isHovered]);
+      }, [isHovered, item.video_url]);
 
       return (
         <div
@@ -467,20 +397,22 @@
           onMouseLeave={() => setIsHovered(false)}
           onClick={() => onClick(item)}
         >
-          <video
-            ref={videoRef}
-            src={getDirectMediaUrl(item.video_url)}
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover z-0"
-          />
+          {item.video_url && (
+            <video
+              ref={videoRef}
+              src={getDirectMediaUrl(item.video_url)}
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover z-0"
+            />
+          )}
 
           <img
-            src={item.img}
+            src={getPosterUrl(item.img)}
             alt={item.title}
             className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-500 ease-in-out ${
-              isHovered ? 'opacity-0' : 'opacity-100'
+              isHovered && videoReady ? 'opacity-0' : 'opacity-100'
             }`}
           />
 
@@ -495,13 +427,13 @@
             </div>
           )}
 
-          <div className={`absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
-            <div className="w-11 h-11 md:w-12 md:h-12 bg-black/65 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg text-white">
+          <div className={`absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-300 ${isHovered && videoReady ? 'opacity-0' : 'opacity-100'}`}>
+            <div className="w-11 h-11 md:w-12 md:h-12 bg-black/65 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg text-white group-hover:bg-[#8A2BE2] transition-colors">
               <IconPlay />
             </div>
           </div>
 
-          <div className={`absolute top-2.5 right-2.5 z-20 transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
+          <div className={`absolute top-2.5 right-2.5 z-20 transition-opacity duration-300 ${isHovered && videoReady ? 'opacity-0' : 'opacity-100'}`}>
             <div className="w-7 h-7 bg-black/60 rounded-md flex items-center justify-center backdrop-blur-sm text-white/80 border border-white/10">
               <IconExpand />
             </div>
@@ -512,11 +444,6 @@
               <span className="text-[10px] font-bold uppercase tracking-wider bg-[#8A2BE2] text-white px-2 py-0.5 rounded">
                 {item.category || 'Lumiz'}
               </span>
-              {isHovered && (
-                <span className="text-[10px] font-semibold bg-white/20 text-white px-2 py-0.5 rounded backdrop-blur-sm">
-                  Muted Trailer
-                </span>
-              )}
             </div>
             <h3 className="text-white font-bold text-sm md:text-base drop-shadow-md truncate">{item.title}</h3>
             <p className={`text-gray-300 text-xs line-clamp-2 mt-1 transition-all duration-300 ${isHovered ? 'block' : 'hidden'}`}>
@@ -528,9 +455,9 @@
     };
 
     // ==========================================
-    // 8. STUDIO GALLERY (HOME, SHORTS PAGE, & SERIES PAGE)
+    // 7. STUDIO GALLERY (MURNI DATA DATABASE)
     // ==========================================
-    const StudioGallery = ({ items, viewMode, onItemClick, isAdmin, onAddClick, onEditClick, onDeleteClick }) => {
+    const StudioGallery = ({ items, loading, viewMode, onItemClick, isAdmin, onAddClick, onEditClick, onDeleteClick }) => {
       const [selectedCat, setSelectedCat] = useState('All');
       const shortsScrollRef = useRef(null);
 
@@ -557,9 +484,6 @@
             <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
               {viewMode === 'shorts' ? 'SHORTS GALLERY (9:16)' : viewMode === 'series' ? 'SERIES GALLERY (16:9)' : 'STUDIO GALLERY'}
             </h2>
-            <p className="text-xs md:text-sm text-gray-400 mt-2 max-w-xl mx-auto">
-              Arahkan kursor (hover) pada video untuk memutar trailer tanpa suara. Klik kartu untuk melihat sinopsis dan daftar chapter.
-            </p>
 
             <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
               {CATEGORIES.map(cat => (
@@ -581,91 +505,134 @@
                   onClick={onAddClick}
                   className="ml-2 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition"
                 >
-                  <IconPlus /> Tambah Video (Admin)
+                  <IconPlus /> Upload Video (Admin)
                 </button>
               )}
             </div>
           </div>
 
-          {(viewMode === 'home' || viewMode === 'shorts') && (
-            <div className="space-y-4 relative">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs md:text-sm font-extrabold text-white uppercase tracking-wider">
-                  VERTICAL CONTENT (9:16) — SHORTS
-                </h3>
-                <span className="text-xs text-gray-400">{shortsList.length} Judul</span>
-              </div>
-
-              {viewMode === 'home' ? (
-                <div className="relative">
-                  <button 
-                    onClick={() => scrollShorts(-1)}
-                    className="absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-white text-black shadow-xl flex items-center justify-center hover:scale-110 transition"
-                  >
-                    <IconLeft />
-                  </button>
-
-                  <div ref={shortsScrollRef} className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth py-2">
-                    {shortsList.map(item => (
-                      <div key={item.id} className="min-w-[210px] sm:min-w-[250px] md:min-w-[265px]">
-                        <HoverVideoCard item={item} isVertical={true} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
-                      </div>
-                    ))}
-                  </div>
-
-                  <button 
-                    onClick={() => scrollShorts(1)}
-                    className="absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-white text-black shadow-xl flex items-center justify-center hover:scale-110 transition"
-                  >
-                    <IconRight />
-                  </button>
-                </div>
+          {/* STATE LOADING ATAU KOSONG */}
+          {loading ? (
+            <div className="py-20 text-center text-gray-400 text-sm animate-pulse">
+              Memuat katalog dari database Lumiz...
+            </div>
+          ) : items.length === 0 ? (
+            <div className="py-20 px-6 text-center bg-[#141414]/60 border border-white/10 rounded-2xl max-w-xl mx-auto">
+              <h3 className="text-xl font-bold text-white mb-2">Katalog Masih Kosong</h3>
+              <p className="text-xs text-gray-400 mb-6">
+                Belum ada tayangan yang di-upload ke database Lumiz.
+              </p>
+              {isAdmin ? (
+                <button
+                  onClick={onAddClick}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#8A2BE2] hover:bg-violet-700 text-white font-bold text-sm shadow-lg transition"
+                >
+                  <IconPlus /> Upload Tayangan Pertama Sekarang
+                </button>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                  {shortsList.map(item => (
-                    <HoverVideoCard key={item.id} item={item} isVertical={true} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
-                  ))}
-                </div>
+                <p className="text-[11px] text-gray-500">Silakan login sebagai Admin di menu Account untuk mulai mengunggah video.</p>
               )}
             </div>
-          )}
-
-          {(viewMode === 'home' || viewMode === 'series') && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs md:text-sm font-extrabold text-white uppercase tracking-wider">
-                  CINEMATIC LANDSCAPE (16:9) — SERIES
-                </h3>
-                <span className="text-xs text-gray-400">{seriesList.length} Judul</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {seriesList.map(item => (
-                  <HoverVideoCard key={item.id} item={item} isVertical={false} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {viewMode === 'home' && selectedCat === 'All' && (
-            <div className="pt-8 border-t border-white/10 space-y-12">
-              {CATEGORIES.filter(c => c !== 'All').map(categoryName => {
-                const catItems = items.filter(i => i.category?.toLowerCase() === categoryName.toLowerCase());
-                if (catItems.length === 0) return null;
-                return (
-                  <div key={categoryName} className="space-y-4">
-                    <h3 className="text-sm md:text-base font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#8A2BE2]"></span>
-                      Kategori: {categoryName}
+          ) : (
+            <>
+              {/* VERTICAL CONTENT (9:16) */}
+              {(viewMode === 'home' || viewMode === 'shorts') && (
+                <div className="space-y-4 relative">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs md:text-sm font-extrabold text-white uppercase tracking-wider">
+                      VERTICAL CONTENT (9:16) — SHORTS
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {catItems.map(item => (
+                    <span className="text-xs text-gray-400">{shortsList.length} Judul</span>
+                  </div>
+
+                  {shortsList.length === 0 ? (
+                    <div className="p-8 text-center border border-white/5 rounded-xl bg-[#141414]/30 text-xs text-gray-500">
+                      Belum ada tayangan Shorts (9:16) pada kategori ini.
+                    </div>
+                  ) : viewMode === 'home' ? (
+                    <div className="relative">
+                      {shortsList.length > 3 && (
+                        <button 
+                          onClick={() => scrollShorts(-1)}
+                          className="absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-white text-black shadow-xl flex items-center justify-center hover:scale-110 transition"
+                        >
+                          <IconLeft />
+                        </button>
+                      )}
+
+                      <div ref={shortsScrollRef} className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth py-2">
+                        {shortsList.map(item => (
+                          <div key={item.id} className="min-w-[210px] sm:min-w-[250px] md:min-w-[265px]">
+                            <HoverVideoCard item={item} isVertical={true} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                          </div>
+                        ))}
+                      </div>
+
+                      {shortsList.length > 3 && (
+                        <button 
+                          onClick={() => scrollShorts(1)}
+                          className="absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-white text-black shadow-xl flex items-center justify-center hover:scale-110 transition"
+                        >
+                          <IconRight />
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                      {shortsList.map(item => (
+                        <HoverVideoCard key={item.id} item={item} isVertical={true} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* CINEMATIC LANDSCAPE (16:9) */}
+              {(viewMode === 'home' || viewMode === 'series') && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs md:text-sm font-extrabold text-white uppercase tracking-wider">
+                      CINEMATIC LANDSCAPE (16:9) — SERIES
+                    </h3>
+                    <span className="text-xs text-gray-400">{seriesList.length} Judul</span>
+                  </div>
+                  {seriesList.length === 0 ? (
+                    <div className="p-8 text-center border border-white/5 rounded-xl bg-[#141414]/30 text-xs text-gray-500">
+                      Belum ada tayangan Series (16:9) pada kategori ini.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {seriesList.map(item => (
                         <HoverVideoCard key={item.id} item={item} isVertical={false} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
                       ))}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  )}
+                </div>
+              )}
+
+              {/* BARIS PER KATEGORI DI HOME */}
+              {viewMode === 'home' && selectedCat === 'All' && (
+                <div className="pt-8 border-t border-white/10 space-y-12">
+                  {CATEGORIES.filter(c => c !== 'All').map(categoryName => {
+                    const catItems = items.filter(i => i.category?.toLowerCase() === categoryName.toLowerCase());
+                    if (catItems.length === 0) return null;
+                    return (
+                      <div key={categoryName} className="space-y-4">
+                        <h3 className="text-sm md:text-base font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#8A2BE2]"></span>
+                          Kategori: {categoryName}
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {catItems.map(item => (
+                            <HoverVideoCard key={item.id} item={item} isVertical={item.type === 'short'} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
 
         </div>
@@ -673,7 +640,7 @@
     };
 
     // ==========================================
-    // 9. HEADER & MAIN APP
+    // 8. HEADER & MAIN APP
     // ==========================================
     const Header = ({ activeTab, setActiveTab, isAdmin, onAddClick }) => {
       const [isScrolled, setIsScrolled] = useState(false);
@@ -703,11 +670,11 @@
 
           <div className="flex items-center gap-4">
             {isAdmin && (
-              <button onClick={onAddClick} className="hidden sm:flex items-center gap-1 text-xs font-bold bg-[#8A2BE2] hover:bg-violet-700 text-white px-3 py-1.5 rounded-lg transition">
+              <button onClick={onAddClick} className="flex items-center gap-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg transition shadow-lg">
                 <IconPlus /> Upload Video
               </button>
             )}
-            <div onClick={() => setActiveTab('account')} className="px-3 py-1.5 rounded-lg bg-[#8A2BE2] flex items-center justify-center text-white font-bold text-xs cursor-pointer shadow-md">
+            <div onClick={() => setActiveTab('account')} className="px-3.5 py-1.5 rounded-lg bg-[#8A2BE2] hover:bg-violet-700 flex items-center justify-center text-white font-bold text-xs cursor-pointer shadow-md transition">
               {isAdmin ? 'ADMIN' : 'Account'}
             </div>
           </div>
@@ -717,7 +684,8 @@
 
     const MainApp = () => {
       const [activeTab, setActiveTab] = useState('home');
-      const [catalog, setCatalog] = useState(FALLBACK_DATA);
+      const [catalog, setCatalog] = useState([]);
+      const [loading, setLoading] = useState(true);
       const [selectedItem, setSelectedItem] = useState(null);
       
       const [user, setUser] = useState(null);
@@ -727,14 +695,16 @@
       const isAdmin = user && ADMIN_EMAILS.includes(user.email?.toLowerCase());
 
       const fetchCatalog = async () => {
+        setLoading(true);
         const { data, error } = await supabase
           .from('lumiz_catalog')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           setCatalog(data);
         }
+        setLoading(false);
       };
 
       useEffect(() => {
@@ -765,14 +735,17 @@
       };
 
       const handleDeleteVideo = async (id) => {
-        if (!window.confirm('Yakin ingin menghapus tayangan ini dari database Lumiz?')) return;
+        if (!window.confirm('Yakin ingin menghapus tayangan ini secara permanen dari database Lumiz?')) return;
         const { error } = await supabase.from('lumiz_catalog').delete().eq('id', id);
         if (!error) {
-          setCatalog(catalog.filter(i => i.id !== id));
+          setCatalog(prev => prev.filter(i => i.id !== id));
         } else {
           alert('Gagal menghapus: ' + error.message);
         }
       };
+
+      // Hero Banner otomatis mengambil tayangan terbaru yang di-upload Admin
+      const featuredHero = catalog.length > 0 ? catalog[0] : null;
 
       return (
         <div className="min-h-screen bg-[#0A0A0A] text-white font-sans">
@@ -787,24 +760,48 @@
           <main className="pb-24 md:pb-12">
             {activeTab === 'home' && (
               <div>
-                <div className="relative w-full h-[55vh] md:h-[70vh] overflow-hidden bg-black">
-                  <img src={HERO_CONTENT.imageUrl} alt="Hero" className="absolute inset-0 w-full h-full object-cover opacity-50" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent" />
-                  <div className="absolute bottom-[12%] left-6 md:left-12 max-w-2xl z-10">
-                    <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded bg-[#8A2BE2] text-white mb-3 inline-block">
-                      Lumiz Original
-                    </span>
-                    <h1 className="text-4xl md:text-6xl font-black text-white mb-3">
-                      {HERO_CONTENT.title}
-                    </h1>
-                    <p className="text-sm md:text-base text-gray-300 max-w-xl">
-                      {HERO_CONTENT.description}
-                    </p>
-                  </div>
+                {/* HERO BANNER DINAMIS */}
+                <div className="relative w-full h-[50vh] md:h-[68vh] overflow-hidden bg-gradient-to-br from-[#141414] via-[#0A0A0A] to-[#1a0933] border-b border-white/5">
+                  {featuredHero ? (
+                    <>
+                      <img src={getPosterUrl(featuredHero.img)} alt={featuredHero.title} className="absolute inset-0 w-full h-full object-cover opacity-45" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent" />
+                      <div className="absolute bottom-[12%] left-6 md:left-12 max-w-2xl z-10 pr-6">
+                        <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded bg-[#8A2BE2] text-white mb-3 inline-block">
+                          Rilisan Terbaru • {featuredHero.category}
+                        </span>
+                        <h1 className="text-3xl md:text-6xl font-black text-white mb-3 drop-shadow-lg">
+                          {featuredHero.title}
+                        </h1>
+                        <p className="text-xs md:text-base text-gray-300 max-w-xl line-clamp-3 mb-5">
+                          {featuredHero.description}
+                        </p>
+                        <button 
+                          onClick={() => setSelectedItem(featuredHero)}
+                          className="flex items-center gap-2 bg-white text-black hover:bg-[#8A2BE2] hover:text-white px-6 py-2.5 rounded-lg font-bold text-sm transition shadow-xl"
+                        >
+                          <IconPlay /> Tonton Sekarang
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.25em] px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300 mb-4">
+                        Lumi<span className="text-[#8A2BE2]">z</span>tudio Official Network
+                      </span>
+                      <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-3">
+                        LUMI<span className="text-[#8A2BE2]">Z</span>
+                      </h1>
+                      <p className="text-xs md:text-sm text-gray-400 max-w-md">
+                        Platform streaming dan katalog original produksi Lumiztudio di bawah supervisi artistik Nezen.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <StudioGallery 
                   items={catalog} 
+                  loading={loading}
                   viewMode="home" 
                   onItemClick={setSelectedItem}
                   isAdmin={isAdmin}
@@ -819,6 +816,7 @@
               <div className="pt-20">
                 <StudioGallery 
                   items={catalog} 
+                  loading={loading}
                   viewMode="shorts" 
                   onItemClick={setSelectedItem}
                   isAdmin={isAdmin}
@@ -833,6 +831,7 @@
               <div className="pt-20">
                 <StudioGallery 
                   items={catalog} 
+                  loading={loading}
                   viewMode="series" 
                   onItemClick={setSelectedItem}
                   isAdmin={isAdmin}
@@ -852,7 +851,7 @@
 
                     {isAdmin ? (
                       <div className="mb-6 p-3 rounded-xl bg-[#8A2BE2]/20 border border-[#8A2BE2] text-xs text-violet-300 font-semibold">
-                        ✓ Status: Admin Resmi Lumiztudio. Fitur Tambah, Edit, dan Hapus Video aktif di Galeri.
+                        ✓ Status: Admin Resmi Lumiztudio. Anda memiliki akses penuh untuk menambah, mengedit, dan menghapus tayangan.
                       </div>
                     ) : (
                       <div className="mb-6 p-3 rounded-xl bg-white/5 text-xs text-gray-400">
@@ -878,7 +877,7 @@
                   <div className="max-w-md w-full bg-[#141414] p-8 rounded-2xl border border-white/10 shadow-xl">
                     <h2 className="text-2xl font-bold mb-2">Masuk ke Lumi<span className="text-[#8A2BE2]">z</span></h2>
                     <p className="text-xs text-gray-400 mb-6">
-                      Login menggunakan akun Google (`keano.dranantya@gmail.com` atau `luminanze.team@gmail.com`) untuk mengaktifkan tombol kelola video.
+                      Silakan masuk dengan akun Google Anda. Akses manajemen katalog otomatis terbuka untuk email Admin resmi.
                     </p>
                     <button 
                       onClick={handleGoogleLogin}
