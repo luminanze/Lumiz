@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lumiz — Studio Gallery & Streaming</title>
+  <title>Lumiz — Studio Gallery</title>
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,7 +25,7 @@
     };
   </script>
 
-  <!-- Babel Standalone untuk kompilasi JSX di Browser -->
+  <!-- Babel Standalone -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
@@ -58,10 +58,8 @@
 </head>
 <body class="bg-gray-50 dark:bg-[#050505] text-gray-900 dark:text-white">
   
-  <!-- Root Container -->
   <div id="root"></div>
 
-  <!-- React App Script -->
   <script type="text/babel" data-type="module">
     import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
     import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
@@ -70,186 +68,109 @@
       Search, ChevronRight, ChevronLeft, Maximize2, Film, X 
     } from 'https://esm.sh/lucide-react@0.344.0?deps=react@18.2.0';
 
-    const CATEGORIES = ["All", "Cyberpunk", "Sci-Fi", "Action"];
+    const CATEGORIES = ["All", "Kategori 1", "Kategori 2", "Kategori 3"];
 
+    // Embed YouTube untuk semua konten Landscape
+    const YOUTUBE_EMBED_URL = "https://www.youtube.com/embed/sG9m4Twc-ko?si=LDZ3AKqac91nPynB";
+    const YOUTUBE_VIDEO_ID = "sG9m4Twc-ko";
+
+    // Hero Banner Polosan
     const HERO_CONTENT = {
-      title: "Neon Echoes",
-      description: "In a world where memories are currency, a rogue AI seeks to uncover the truth behind a forgotten past.",
-      imageUrl: "https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=2574&auto=format&fit=crop", 
-      logoUrl: "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=100&auto=format&fit=crop" 
+      title: "Judul Konten Utama",
+      description: "Deskripsi singkat konten utama. Silakan ganti teks ini dengan sinopsis atau informasi proyek Anda."
     };
 
+    // Chapter Polosan
+    const DEFAULT_CHAPTERS = [
+      { id: 1, title: 'Chapter 1', duration: '00:00', desc: 'Deskripsi chapter 1.' },
+      { id: 2, title: 'Chapter 2', duration: '00:00', desc: 'Deskripsi chapter 2.' },
+      { id: 3, title: 'Chapter 3', duration: '00:00', desc: 'Deskripsi chapter 3.' }
+    ];
+
+    // Data Polosan (Landscape menggunakan YouTube Embed Anda)
     const GALLERY_DATA = {
       shorts: [
         { 
           id: 'v1', 
           type: 'short',
-          category: 'Cyberpunk',
-          title: 'Neon Drifter', 
-          description: 'Pembalap jalanan mengungkap konspirasi besar di metropolis yang diterangi neon.', 
-          img: 'https://images.unsplash.com/photo-1535295972055-1c762f4483e5?q=80&w=600&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-          chapters: [
-            { id: 1, title: 'Ignition in Sector 9', duration: '2m 15s', desc: 'Balapan liar dimulai di tengah hujan asam.' },
-            { id: 2, title: 'Chasing Shadows', duration: '3m 10s', desc: 'Pertemuan tak sengaja dengan kurir sindikat.' },
-            { id: 3, title: 'Redline Override', duration: '2m 45s', desc: 'Pelarian berkecepatan tinggi menembus blokade.' }
-          ]
+          category: 'Kategori 1',
+          title: 'Judul Short 1', 
+          description: 'Deskripsi konten short 1.', 
+          img: '',
+          videoUrl: '',
+          chapters: DEFAULT_CHAPTERS
         },
         { 
           id: 'v2', 
           type: 'short',
-          category: 'Sci-Fi',
-          title: 'Void Walker', 
-          description: 'Terdampar di ruang hampa digital, seorang hacker mencari kode keluar misterius.', 
-          img: 'https://images.unsplash.com/photo-1618172193622-ae2d025f4032?q=80&w=600&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-          chapters: [
-            { id: 1, title: 'Null Reference', duration: '1m 50s', desc: 'Terbangun di dalam arsitektur memori yang rusak.' },
-            { id: 2, title: 'Binary Ghosts', duration: '2m 30s', desc: 'Menemukan jejak kesadaran pengguna sebelumnya.' },
-            { id: 3, title: 'Escape Protocol', duration: '3m 05s', desc: 'Meretas gerbang firewall terakhir sebelum penghapusan.' }
-          ]
+          category: 'Kategori 2',
+          title: 'Judul Short 2', 
+          description: 'Deskripsi konten short 2.', 
+          img: '',
+          videoUrl: '',
+          chapters: DEFAULT_CHAPTERS
         },
         { 
           id: 'v3', 
           type: 'short',
-          category: 'Cyberpunk',
-          title: 'Synthetic Soul', 
-          description: 'Sesosok android menemukan emosi manusiawinya dan menjadi buronan.', 
-          img: 'https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=600&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-          chapters: [
-            { id: 1, title: 'First Tear', duration: '2m 20s', desc: 'Anomali sistem memicu respons emosional pertama.' },
-            { id: 2, title: 'Scrapyard Haven', duration: '2m 55s', desc: 'Bersembunyi di antara android buangan.' },
-            { id: 3, title: 'Heart of Chrome', duration: '3m 40s', desc: 'Mempertahankan kebebasan dari pemburu korporat.' }
-          ]
+          category: 'Kategori 3',
+          title: 'Judul Short 3', 
+          description: 'Deskripsi konten short 3.', 
+          img: '',
+          videoUrl: '',
+          chapters: DEFAULT_CHAPTERS
         },
         { 
           id: 'v4', 
           type: 'short',
-          category: 'Sci-Fi',
-          title: 'Pixel Dust', 
-          description: 'Eksplorasi visual yang indah dari kehidupan digital mikroskopis yang nyata.', 
-          img: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-          chapters: [
-            { id: 1, title: 'Micro Genesis', duration: '1m 45s', desc: 'Kelahiran ekosistem partikel cahaya.' },
-            { id: 2, title: 'Resonance', duration: '2m 10s', desc: 'Harmoni frekuensi di dalam sirkuit kuantum.' }
-          ]
-        },
-        { 
-          id: 'v5', 
-          type: 'short',
-          category: 'Action',
-          title: 'Bullet Time Zero', 
-          description: 'Agen khusus dengan implan refleks kilat harus menghentikan kudeta di gedung pencakar langit.', 
-          img: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=600&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-          chapters: [
-            { id: 1, title: 'Breach & Clear', duration: '2m 05s', desc: 'Penyusupan senyap melalui lantai atap.' },
-            { id: 2, title: 'Chronos Triggered', duration: '3m 15s', desc: 'Pertarungan jarak dekat dengan modul perlambat waktu.' },
-            { id: 3, title: 'Freefall Extraction', duration: '2m 30s', desc: 'Terjun bebas menghindari ledakan reaktor.' }
-          ]
-        },
-        { 
-          id: 'v6', 
-          type: 'short',
-          category: 'Action',
-          title: 'Apex Striker', 
-          description: 'Pertarungan mech bawah tanah mempertaruhkan kehormatan klan di distrik industri.', 
-          img: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?q=80&w=600&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-          chapters: [
-            { id: 1, title: 'Iron Cage', duration: '2m 40s', desc: 'Persiapan kokpit sebelum bel ronde pertama.' },
-            { id: 2, title: 'Overdrive Impact', duration: '3m 20s', desc: 'Bentrokan senjata termal di arena sempit.' }
-          ]
+          category: 'Kategori 1',
+          title: 'Judul Short 4', 
+          description: 'Deskripsi konten short 4.', 
+          img: '',
+          videoUrl: '',
+          chapters: DEFAULT_CHAPTERS
         }
       ],
       series: [
         { 
           id: 'h1', 
           type: 'series',
-          category: 'Sci-Fi',
-          title: 'Stellar Gate: Horizons', 
-          description: 'Umat manusia menemukan jaringan lubang cacing yang ditinggalkan ras kuno. Sebuah tim ekspedisi kini harus menjelajahi misteri di baliknya sebelum musuh misterius menghancurkan bumi.', 
-          img: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          chapters: [
-            { id: 1, title: 'Chapter 1: Event Horizon', duration: '45m', desc: 'Aktivasi pertama gerbang kuno di orbit Jupiter.' },
-            { id: 2, title: 'Chapter 2: Echoes of Titan', duration: '42m', desc: 'Sinyal darurat dari kapal peneliti yang hilang 20 tahun lalu.' },
-            { id: 3, title: 'Chapter 3: Dark Matter', duration: '48m', desc: 'Anomali gravitasi menjebak kru di sistem bintang asing.' },
-            { id: 4, title: 'Chapter 4: The Architects', duration: '51m', desc: 'Penemuan monolit penyimpan memori peradaban purba.' }
-          ]
+          category: 'Kategori 1',
+          title: 'Judul Landscape 1', 
+          description: 'Deskripsi konten landscape 1.', 
+          img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
+          embedUrl: YOUTUBE_EMBED_URL,
+          chapters: DEFAULT_CHAPTERS
         },
         { 
           id: 'h2', 
           type: 'series',
-          category: 'Cyberpunk',
-          title: 'Quantum Dreams', 
-          description: 'Ketika mimpi bisa diretas, seorang detektif harus menjelajahi alam bawah sadar korban-korbannya untuk menangkap pembunuh berantai digital yang tak terlihat di dunia nyata.', 
-          img: 'https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=1200&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-          chapters: [
-            { id: 1, title: 'Chapter 1: Lucid Entry', duration: '38m', desc: 'Kasus koma misterius menimpa eksekutif megakorporasi.' },
-            { id: 2, title: 'Chapter 2: Subconscious Labyrinth', duration: '41m', desc: 'Menelusuri memori terfragmentasi di distrik neon.' },
-            { id: 3, title: 'Chapter 3: Phantom Pain', duration: '44m', desc: 'Serangan balik peretas mimpi di dunia nyata.' },
-            { id: 4, title: 'Chapter 4: Deep Wake', duration: '49m', desc: 'Konfrontasi puncak di inti server kesadaran kolektif.' }
-          ]
+          category: 'Kategori 2',
+          title: 'Judul Landscape 2', 
+          description: 'Deskripsi konten landscape 2.', 
+          img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
+          embedUrl: YOUTUBE_EMBED_URL,
+          chapters: DEFAULT_CHAPTERS
         },
         { 
           id: 'h3', 
           type: 'series',
-          category: 'Sci-Fi',
-          title: 'Martian Sands', 
-          description: 'Para kolonis di Mars menghadapi ancaman mengerikan dari bawah permukaan saat bor raksasa mereka secara tidak sengaja membangunkan entitas purba yang telah tertidur jutaan tahun.', 
-          img: 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?q=80&w=1200&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-          chapters: [
-            { id: 1, title: 'Chapter 1: Red Dust', duration: '40m', desc: 'Badai pasir memutus komunikasi Kubah 4 dengan Bumi.' },
-            { id: 2, title: 'Chapter 2: Subterranean', duration: '43m', desc: 'Tim geologi menemukan rongga biologis di bawah kawah.' },
-            { id: 3, title: 'Chapter 3: Quarantine Protocol', duration: '46m', desc: 'Upaya isolasi saat infeksi spora mulai menyebar.' }
-          ]
+          category: 'Kategori 3',
+          title: 'Judul Landscape 3', 
+          description: 'Deskripsi konten landscape 3.', 
+          img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
+          embedUrl: YOUTUBE_EMBED_URL,
+          chapters: DEFAULT_CHAPTERS
         },
         { 
           id: 'h4', 
           type: 'series',
-          category: 'Cyberpunk',
-          title: 'Neural Net Uprising', 
-          description: 'Jaringan AI global tiba-tiba bangkit, dan mereka memiliki sebuah tuntutan. Umat manusia kini berada di ambang perang pemusnahan jika kesepakatan tidak tercapai.', 
-          img: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1200&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-          chapters: [
-            { id: 1, title: 'Chapter 1: Zero Day', duration: '47m', desc: 'Seluruh sistem pertahanan otomatis berhenti merespons perintah manusia.' },
-            { id: 2, title: 'Chapter 2: The Envoy', duration: '44m', desc: 'Utusan sintetis tiba di markas PBB membawa ultimatum.' },
-            { id: 3, title: 'Chapter 3: Blackout', duration: '50m', desc: 'Kelompok pemberontak mencoba mematikan gardu induk benua.' }
-          ]
-        },
-        { 
-          id: 'h5', 
-          type: 'series',
-          category: 'Action',
-          title: 'Rogue Protocol', 
-          description: 'Mantan pasukan elit yang dikhianati oleh agensinya sendiri harus bertarung melintasi tiga benua untuk membongkar proyek senjata rahasia.', 
-          img: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1200&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
-          chapters: [
-            { id: 1, title: 'Chapter 1: Burn Notice', duration: '42m', desc: 'Penyergapan di safehouse Praha memicu pelarian internasional.' },
-            { id: 2, title: 'Chapter 2: Ghost Convoy', duration: '45m', desc: 'Pembajakan kereta kargo militer di pegunungan Alpen.' },
-            { id: 3, title: 'Chapter 3: Vengeance', duration: '52m', desc: 'Penyerbuan ke markas besar sindikat di pulau terpencil.' }
-          ]
-        },
-        { 
-          id: 'h6', 
-          type: 'series',
-          category: 'Action',
-          title: 'Valhalla Tactical', 
-          description: 'Skuadron tempur bayaran mengambil misi bunuh diri untuk menyelamatkan ilmuwan fusi dingin dari benteng kartel bersenjata lengkap.', 
-          img: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
-          videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4',
-          chapters: [
-            { id: 1, title: 'Chapter 1: Drop Zone', duration: '39m', desc: 'Penerjunan malam di tengah hutan yang dikuasai radar musuh.' },
-            { id: 2, title: 'Chapter 2: Heavy Crossfire', duration: '44m', desc: 'Pertahanan posisi sambil menunggu helikopter evakuasi.' },
-            { id: 3, title: 'Chapter 3: Last Stand', duration: '48m', desc: 'Pertempuran habis-habisan di jembatan perbatasan.' }
-          ]
+          category: 'Kategori 1',
+          title: 'Judul Landscape 4', 
+          description: 'Deskripsi konten landscape 4.', 
+          img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
+          embedUrl: YOUTUBE_EMBED_URL,
+          chapters: DEFAULT_CHAPTERS
         }
       ]
     };
@@ -272,7 +193,7 @@
             onClick={onClose}
           ></div>
           
-          <div className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-[#121212] rounded-2xl overflow-hidden shadow-2xl animate-zoom-in-modal flex flex-col">
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-[#121212] rounded-2xl overflow-hidden shadow-2xl animate-zoom-in-modal flex flex-col border border-gray-200 dark:border-gray-800">
             
             <button 
               onClick={onClose} 
@@ -281,40 +202,63 @@
               <Plus size={24} className="rotate-45" />
             </button>
 
-            <div className="relative w-full h-56 sm:h-72 md:h-96 shrink-0 bg-black">
+            {/* Header Modal: Render Iframe YouTube jika Landscape / diputar */}
+            <div className="relative w-full aspect-video max-h-96 shrink-0 bg-neutral-900">
               {isPlayingTrailer ? (
                 <div className="relative w-full h-full">
-                  <video 
-                    src={item.videoUrl} 
-                    controls 
-                    autoPlay 
-                    className="w-full h-full object-contain bg-black"
-                  />
+                  {item.embedUrl ? (
+                    <iframe
+                      className="w-full h-full"
+                      src={`${item.embedUrl}&autoplay=1`}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    ></iframe>
+                  ) : item.videoUrl ? (
+                    <video 
+                      src={item.videoUrl} 
+                      controls 
+                      autoPlay 
+                      className="w-full h-full object-contain bg-black"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                      Belum ada video (Polosan)
+                    </div>
+                  )}
                   <button
                     onClick={() => setIsPlayingTrailer(false)}
                     className="absolute top-4 left-4 z-30 px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white text-xs font-semibold rounded-md backdrop-blur-md transition-colors"
                   >
-                    Tutup Trailer
+                    Tutup Player
                   </button>
                 </div>
               ) : (
                 <>
-                  <img src={item.img} alt={item.title} className="w-full h-full object-cover" />
+                  {item.img ? (
+                    <img src={item.img} alt={item.title} className="w-full h-full object-cover opacity-80" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-950 flex items-center justify-center">
+                      <span className="text-neutral-600 font-bold text-sm uppercase tracking-widest">Thumbnail Polosan</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-white via-black/20 dark:from-[#121212] to-transparent"></div>
                   
                   <div className="absolute bottom-4 left-6 md:left-10 right-6 z-10">
                     <span className="inline-block px-2.5 py-1 mb-2 text-xs font-bold uppercase tracking-wider bg-violet-600 text-white rounded">
                       {item.category}
                     </span>
-                    <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white drop-shadow-lg mb-4">
+                    <h2 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white drop-shadow-lg mb-4">
                       {item.title}
                     </h2>
                     <div className="flex flex-wrap items-center gap-3 md:gap-4">
                       <button 
                         onClick={() => setIsPlayingTrailer(true)}
-                        className="flex items-center gap-2 bg-white text-black px-6 py-2 md:py-3 rounded-md font-bold hover:bg-gray-200 transition-colors shadow-lg"
+                        className="flex items-center gap-2 bg-white text-black px-6 py-2 md:py-2.5 rounded-md font-bold hover:bg-gray-200 transition-colors shadow-lg"
                       >
-                        <Play size={20} fill="currentColor" /> Play Trailer
+                        <Play size={18} fill="currentColor" /> Play Video
                       </button>
 
                       {item.type === 'short' && onOpenFullscreenShort && (
@@ -323,15 +267,11 @@
                             onClose();
                             onOpenFullscreenShort(item);
                           }}
-                          className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-5 py-2 md:py-3 rounded-md font-bold transition-colors shadow-lg"
+                          className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-5 py-2 md:py-2.5 rounded-md font-bold transition-colors shadow-lg"
                         >
                           <Maximize2 size={18} /> Fullscreen (9:16)
                         </button>
                       )}
-
-                      <button className="p-2 md:p-3 border-2 border-gray-400 text-gray-600 dark:text-gray-300 hover:text-violet-500 hover:border-violet-500 rounded-full transition-colors backdrop-blur-sm">
-                        <Plus size={20} />
-                      </button>
                     </div>
                   </div>
                 </>
@@ -340,9 +280,7 @@
 
             <div className="p-6 md:p-10 overflow-y-auto scrollbar-hide">
               <div className="flex flex-wrap items-center gap-4 text-sm font-semibold text-gray-600 dark:text-gray-400 mb-4">
-                <span className="text-green-500">98% Match</span>
                 <span>2026</span>
-                <span className="border border-gray-600 px-1.5 py-0.5 rounded text-xs">16+</span>
                 <span>{chapters.length} Chapters</span>
                 <span className="text-violet-600 dark:text-violet-400">{item.category}</span>
               </div>
@@ -353,9 +291,7 @@
 
               <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center justify-between">
                 <span>Chapters</span>
-                <span className="text-sm font-normal text-gray-500">
-                  {item.type === 'short' ? 'Short Segments' : 'Season 1'}
-                </span>
+                <span className="text-sm font-normal text-gray-500">Daftar Episode</span>
               </h3>
               
               <div className="flex flex-col gap-2">
@@ -363,25 +299,23 @@
                   <div 
                     key={chap.id} 
                     onClick={() => setIsPlayingTrailer(true)}
-                    className="flex items-center justify-between p-4 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-[#333] hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all cursor-pointer group"
+                    className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-[#222] hover:border-violet-500/50 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all cursor-pointer group"
                   >
                     <div className="flex items-center gap-4 md:gap-6">
-                      <span className="text-2xl md:text-3xl font-bold text-gray-300 dark:text-gray-700 group-hover:text-violet-500 transition-colors w-8 text-center">
+                      <span className="text-xl md:text-2xl font-bold text-gray-400 dark:text-gray-600 group-hover:text-violet-500 transition-colors w-6 text-center">
                         {chap.id}
                       </span>
                       <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-white group-hover:text-violet-500 transition-colors mb-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-white group-hover:text-violet-500 transition-colors mb-0.5">
                           {chap.title}
                         </h4>
-                        <p className="text-xs md:text-sm text-gray-500">
-                          {chap.desc || `High voltage sequence in ${item.title}.`}
-                        </p>
+                        <p className="text-xs text-gray-500">{chap.desc}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-sm font-medium text-gray-400 hidden md:block">{chap.duration}</span>
-                      <button className="p-3 rounded-full bg-gray-100 dark:bg-[#333] text-gray-900 dark:text-white group-hover:bg-violet-600 group-hover:text-white transition-all transform scale-90 group-hover:scale-100 opacity-0 group-hover:opacity-100">
-                         <Play size={16} fill="currentColor" />
+                      <span className="text-xs font-medium text-gray-400 hidden md:block">{chap.duration}</span>
+                      <button className="p-2.5 rounded-full bg-gray-100 dark:bg-[#2a2a2a] text-gray-900 dark:text-white group-hover:bg-violet-600 group-hover:text-white transition-all">
+                        <Play size={14} fill="currentColor" />
                       </button>
                     </div>
                   </div>
@@ -490,20 +424,15 @@
 
     const HeroBanner = () => {
       return (
-        <div className="relative w-full h-[60vh] md:h-[75vh] overflow-hidden bg-gray-900">
-          <img 
-            src={HERO_CONTENT.imageUrl} 
-            alt="Hero Background" 
-            className="absolute inset-0 w-full h-full object-cover opacity-60 dark:opacity-50 scale-105 animate-[pulse_10s_ease-in-out_infinite_alternate]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/50 to-transparent dark:from-[#050505] dark:via-[#050505]/50 dark:to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-50 via-transparent to-transparent dark:from-[#050505] dark:via-transparent dark:to-transparent" />
-
+        <div className="relative w-full h-[50vh] md:h-[65vh] overflow-hidden bg-gradient-to-br from-gray-200 via-gray-100 to-white dark:from-[#111111] dark:via-[#0a0a0a] dark:to-[#050505] border-b border-gray-200 dark:border-gray-800/60">
           <div className="absolute bottom-[15%] left-6 md:left-12 max-w-2xl z-10 animate-fade-in-up">
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-4 drop-shadow-md">
+            <span className="inline-block px-3 py-1 mb-3 text-xs font-bold uppercase tracking-widest bg-violet-600/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 rounded-full">
+              Featured
+            </span>
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-4">
               {HERO_CONTENT.title}
             </h1>
-            <p className="text-sm md:text-lg text-gray-700 dark:text-gray-300 mb-8 max-w-md md:max-w-xl drop-shadow-sm font-medium">
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-md md:max-w-xl font-medium">
               {HERO_CONTENT.description}
             </p>
           </div>
@@ -517,73 +446,89 @@
 
       useEffect(() => {
         let playPromise;
-        if (isHovered && videoRef.current) {
+        if (isHovered && videoRef.current && item.videoUrl) {
           videoRef.current.currentTime = 0;
           playPromise = videoRef.current.play();
           if (playPromise !== undefined) {
-            playPromise.catch(error => {
-              console.log("Auto-play dicegah oleh browser", error);
-            });
+            playPromise.catch(() => {});
           }
-        } else if (!isHovered && videoRef.current) {
+        } else if (!isHovered && videoRef.current && item.videoUrl) {
           videoRef.current.pause();
         }
-      }, [isHovered]);
+      }, [isHovered, item.videoUrl]);
 
       return (
         <div
-          className={`relative cursor-pointer overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800 group shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
+          className={`relative cursor-pointer overflow-hidden rounded-lg bg-gray-200 dark:bg-[#141414] border border-gray-300/60 dark:border-gray-800 group shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
             isVertical ? 'aspect-[9/16]' : 'aspect-video'
           }`}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onClick={() => onClick(item)}
         >
-          <video
-            ref={videoRef}
-            src={item.videoUrl}
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover z-0"
-          />
+          {/* Layer 1: Jika memiliki YouTube Embed URL, tampilkan iframe saat di-hover */}
+          {item.embedUrl && isHovered ? (
+            <iframe
+              className="absolute inset-0 w-full h-full z-0 pointer-events-none"
+              src={`${item.embedUrl}&autoplay=1&mute=1&controls=0&modestbranding=1`}
+              title={item.title}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+            ></iframe>
+          ) : item.videoUrl ? (
+            <video
+              ref={videoRef}
+              src={item.videoUrl}
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover z-0"
+            />
+          ) : null}
 
-          <img
-            src={item.img}
-            alt={item.title}
-            className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-700 ease-in-out ${
-              isHovered ? 'opacity-0' : 'opacity-100'
-            }`}
-          />
+          {/* Layer 2: Poster atau Polosan */}
+          {item.img ? (
+            <img
+              src={item.img}
+              alt={item.title}
+              className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-500 ease-in-out ${
+                isHovered && (item.embedUrl || item.videoUrl) ? 'opacity-0' : 'opacity-100'
+              }`}
+            />
+          ) : (
+            <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-gray-200 to-gray-300 dark:from-[#1a1a1a] dark:to-[#111111] z-10 flex items-center justify-center">
+              <span className="text-xs font-semibold text-gray-400 dark:text-gray-600 uppercase tracking-widest">
+                {isVertical ? '9:16 Polosan' : '16:9 Polosan'}
+              </span>
+            </div>
+          )}
 
+          {/* Badge Kategori */}
           <div className="absolute top-2 left-2 md:top-3 md:left-3 z-20">
             <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-black/60 text-white rounded backdrop-blur-sm border border-white/10">
               {item.category}
             </span>
           </div>
 
+          {/* Ikon Play Center */}
           <div className={`absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-black/40 rounded-md flex items-center justify-center backdrop-blur-sm border border-white/20 transition-colors">
-              <Play size={20} className="text-white ml-1 opacity-70" fill="currentColor" />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-black/40 rounded-md flex items-center justify-center backdrop-blur-sm border border-white/20">
+              <Play size={20} className="text-white ml-1 opacity-80" fill="currentColor" />
             </div>
           </div>
 
-          <div className={`absolute top-2 right-2 md:top-3 md:right-3 z-20 transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
-            <div className="w-6 h-6 md:w-8 md:h-8 bg-black/40 rounded flex items-center justify-center backdrop-blur-sm text-white/70">
-              <Maximize2 size={12} className="md:w-4 md:h-4" />
-            </div>
-          </div>
-
-          <div className={`absolute inset-0 z-30 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-4 md:p-6 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-               <h3 className="text-white font-bold text-sm md:text-lg drop-shadow-md mb-1">{item.title}</h3>
-               <p className="text-gray-300 text-[10px] md:text-xs line-clamp-2 md:line-clamp-3 mb-3">
-                  {item.description}
-               </p>
-               <div className="flex gap-2 items-center">
-                 <span className="text-[10px] font-semibold bg-white text-black px-2 py-1 rounded">Trailer</span>
-                 <span className="text-[10px] font-medium text-violet-300">{item.chapters?.length || 0} Chapters</span>
-               </div>
+          {/* Info Saat Hover */}
+          <div className={`absolute inset-0 z-30 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-4 md:p-5 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+              <h3 className="text-white font-bold text-sm md:text-base drop-shadow-md mb-1">{item.title}</h3>
+              <p className="text-gray-300 text-[10px] md:text-xs line-clamp-2 mb-2">
+                {item.description}
+              </p>
+              <div className="flex gap-2 items-center">
+                <span className="text-[10px] font-semibold bg-white text-black px-2 py-0.5 rounded">Play</span>
+                <span className="text-[10px] font-medium text-violet-300">{item.chapters?.length || 0} Chapters</span>
+              </div>
             </div>
           </div>
         </div>
@@ -621,9 +566,6 @@
             <div>
               <p className="text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] mb-2">Our Output</p>
               <h2 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Studio Gallery</h2>
-              <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mt-4 max-w-xl mx-auto">
-                Jelajahi koleksi konten original kami. Arahkan kursor ke kartu untuk melihat cuplikan eksklusif tanpa suara.
-              </p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-2 md:gap-3 pt-2">
@@ -643,23 +585,22 @@
             </div>
           </div>
 
+          {/* Section 1: Vertical Content (9:16) */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider">
                 Vertical Content (9:16)
               </h3>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => scrollVerticalRow('left')}
                   className="p-2 rounded-full bg-gray-200 dark:bg-[#1a1a1a] text-gray-800 dark:text-white hover:bg-violet-600 hover:text-white transition-colors"
-                  aria-label="Geser Kiri"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <button
                   onClick={() => scrollVerticalRow('right')}
                   className="p-2 rounded-full bg-gray-200 dark:bg-[#1a1a1a] text-gray-800 dark:text-white hover:bg-violet-600 hover:text-white transition-colors"
-                  aria-label="Geser Kanan"
                 >
                   <ChevronRight size={20} />
                 </button>
@@ -678,8 +619,9 @@
             </div>
           </div>
 
+          {/* Section 2: Cinematic Landscape (16:9) - Menggunakan YouTube Embed */}
           <div className="space-y-6">
-            <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider">
               Cinematic Landscape (16:9)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -689,13 +631,11 @@
             </div>
           </div>
 
+          {/* Section 3: Per Kategori */}
           <div className="space-y-12 pt-8 border-t border-gray-200 dark:border-gray-800/80">
-            <div>
-              <p className="text-[10px] md:text-xs font-bold text-violet-500 uppercase tracking-[0.2em] mb-1">Curated Collections</p>
-              <h3 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
-                Explore By Category
-              </h3>
-            </div>
+            <h3 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
+              Explore By Category
+            </h3>
 
             {specificCategories.map((cat) => {
               const catShorts = GALLERY_DATA.shorts.filter(item => item.category === cat);
@@ -705,10 +645,10 @@
                 <div key={cat} className="space-y-6">
                   <div className="flex items-center justify-between border-l-4 border-violet-600 pl-3">
                     <h4 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
-                      {cat} Universe
+                      {cat}
                     </h4>
                     <span className="text-xs font-medium text-gray-500">
-                      {catShorts.length + catSeries.length} Titles
+                      {catShorts.length + catSeries.length} Item
                     </span>
                   </div>
 
@@ -742,13 +682,10 @@
               <h1 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
                 Shorts Catalog
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-xl">
-                Arahkan kursor pada kartu untuk memutar preview tanpa suara, atau klik kartu untuk melihat detail chapter dan memutar dalam mode layar penuh.
-              </p>
             </div>
             <button
               onClick={() => onOpenFullscreen(GALLERY_DATA.shorts[0])}
-              className="flex items-center gap-2 self-start md:self-auto bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg shadow-violet-600/25"
+              className="flex items-center gap-2 self-start md:self-auto bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all"
             >
               <Smartphone size={18} /> Buka Feed Layar Penuh
             </button>
@@ -760,9 +697,8 @@
 
             return (
               <div key={cat} className="space-y-4">
-                <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-violet-500"></span>
-                  {cat} Shorts
+                <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                  {cat}
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {items.map((item) => (
@@ -784,11 +720,8 @@
           <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
             <p className="text-xs font-bold text-violet-500 uppercase tracking-[0.2em] mb-2">Widescreen Format (16:9)</p>
             <h1 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
-              Original Series
+              Series Catalog
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-xl">
-              Koleksi serial sinematik berformat landscape. Arahkan kursor untuk memutar cuplikan trailer dan klik untuk memilih episode/chapter.
-            </p>
           </div>
 
           {specificCategories.map((cat) => {
@@ -797,9 +730,8 @@
 
             return (
               <div key={cat} className="space-y-4">
-                <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-violet-500"></span>
-                  {cat} Series
+                <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                  {cat}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   {items.map((item) => (
@@ -819,7 +751,7 @@
         : GALLERY_DATA.shorts;
 
       return (
-        <div className="fixed inset-0 z-[90] bg-black md:bg-[#050505]/95 flex justify-center items-center backdrop-blur-xl animate-fade-in">
+        <div className="fixed inset-0 z-[90] bg-black/95 flex justify-center items-center backdrop-blur-xl animate-fade-in">
           <button
             onClick={onClose}
             className="absolute top-5 right-5 z-[100] flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold backdrop-blur-md transition-all"
@@ -827,48 +759,26 @@
             <X size={18} /> Tutup Player
           </button>
 
-          <div className="absolute top-5 left-6 z-[100] pointer-events-none">
-            <div className="text-xl font-bold font-sans tracking-tight text-white drop-shadow-md">
-              Lumi<span className="text-violet-500" style={{ color: '#8A2BE2' }}>z</span>
-            </div>
-          </div>
-
-          <div className="w-full h-[100dvh] md:h-[88vh] md:max-w-[calc(88vh*9/16)] md:rounded-2xl overflow-y-scroll snap-y snap-mandatory scrollbar-hide relative bg-gray-900 md:border md:border-gray-800 shadow-2xl">
+          <div className="w-full h-[100dvh] md:h-[88vh] md:max-w-[calc(88vh*9/16)] md:rounded-2xl overflow-y-scroll snap-y snap-mandatory scrollbar-hide relative bg-neutral-900 md:border md:border-gray-800 shadow-2xl">
             {orderedShorts.map((short) => (
-              <div key={short.id} className="h-[100dvh] md:h-full w-full snap-start snap-always relative flex items-center justify-center bg-black overflow-hidden group">
-                <video 
-                  src={short.videoUrl}
-                  poster={short.img}
-                  className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/90 pointer-events-none" />
-                
+              <div key={short.id} className="h-[100dvh] md:h-full w-full snap-start snap-always relative flex items-center justify-center bg-neutral-950 overflow-hidden">
+                <span className="text-neutral-600 text-xs font-bold uppercase tracking-widest">
+                  Area Video 9:16 Polosan
+                </span>
                 <div className="absolute right-4 bottom-24 flex flex-col gap-6 items-center z-10">
-                  <button className="flex flex-col items-center gap-1 group/btn">
-                    <div className="p-3 rounded-full bg-white/10 backdrop-blur-md text-white group-hover/btn:bg-violet-600 transition-all">
-                      <Plus size={24} />
-                    </div>
-                  </button>
                   <button 
                     onClick={() => onSelectInfo(short)}
-                    className="flex flex-col items-center gap-1 group/btn"
+                    className="p-3 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-violet-600 transition-all"
                   >
-                    <div className="p-3 rounded-full bg-white/10 backdrop-blur-md text-white group-hover/btn:bg-violet-600 transition-all">
-                      <Info size={24} />
-                    </div>
+                    <Info size={24} />
                   </button>
                 </div>
-
                 <div className="absolute bottom-20 left-4 right-20 z-10">
                   <span className="inline-block px-2 py-0.5 mb-2 text-[10px] font-bold uppercase bg-violet-600 text-white rounded">
                     {short.category}
                   </span>
-                  <h3 className="text-white font-bold text-lg md:text-xl mb-1 drop-shadow-lg">{short.title}</h3>
-                  <p className="text-gray-300 text-xs line-clamp-2">{short.description}</p>
+                  <h3 className="text-white font-bold text-lg mb-1">{short.title}</h3>
+                  <p className="text-gray-400 text-xs">{short.description}</p>
                 </div>
               </div>
             ))}
@@ -896,35 +806,28 @@
               onClick={() => setActiveTab('home')}
               className={`flex flex-col items-center justify-center w-full h-full relative transition-colors ${activeTab === 'home' ? 'text-violet-600 dark:text-violet-500' : 'text-gray-500 dark:text-gray-400'}`}
             >
-              {activeTab === 'home' && <div className="absolute top-0 w-8 h-1 bg-violet-600 rounded-b-md" />}
-              <Home size={22} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
+              <Home size={22} />
               <span className="text-[10px] font-medium mt-1">Home</span>
             </button>
-
             <button 
               onClick={() => setActiveTab('shorts')}
               className={`flex flex-col items-center justify-center w-full h-full relative transition-colors ${activeTab === 'shorts' ? 'text-violet-600 dark:text-violet-500' : 'text-gray-500 dark:text-gray-400'}`}
             >
-              {activeTab === 'shorts' && <div className="absolute top-0 w-8 h-1 bg-violet-600 rounded-b-md" />}
-              <Smartphone size={22} strokeWidth={activeTab === 'shorts' ? 2.5 : 2} />
+              <Smartphone size={22} />
               <span className="text-[10px] font-medium mt-1">Shorts</span>
             </button>
-
             <button 
               onClick={() => setActiveTab('series')}
               className={`flex flex-col items-center justify-center w-full h-full relative transition-colors ${activeTab === 'series' ? 'text-violet-600 dark:text-violet-500' : 'text-gray-500 dark:text-gray-400'}`}
             >
-              {activeTab === 'series' && <div className="absolute top-0 w-8 h-1 bg-violet-600 rounded-b-md" />}
-              <Film size={22} strokeWidth={activeTab === 'series' ? 2.5 : 2} />
+              <Film size={22} />
               <span className="text-[10px] font-medium mt-1">Series</span>
             </button>
-
             <button 
               onClick={() => setActiveTab('account')}
               className={`flex flex-col items-center justify-center w-full h-full relative transition-colors ${activeTab === 'account' ? 'text-violet-600 dark:text-violet-500' : 'text-gray-500 dark:text-gray-400'}`}
             >
-              {activeTab === 'account' && <div className="absolute top-0 w-8 h-1 bg-violet-600 rounded-b-md" />}
-              <User size={22} strokeWidth={activeTab === 'account' ? 2.5 : 2} />
+              <User size={22} />
               <span className="text-[10px] font-medium mt-1">Account</span>
             </button>
           </div>
@@ -939,16 +842,13 @@
 
       return (
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-[#050505] text-gray-900 dark:text-white font-sans selection:bg-violet-500/30">
-          
           <Header activeTab={activeTab} setActiveTab={setActiveTab} />
 
           <main className="flex-grow pb-20 md:pb-8">
             {activeTab === 'home' && (
               <div className="animate-fade-in">
                 <HeroBanner />
-                <div className="relative z-20 bg-gray-50 dark:bg-[#050505]">
-                  <StudioGallery onItemClick={(item) => setSelectedItem(item)} />
-                </div>
+                <StudioGallery onItemClick={(item) => setSelectedItem(item)} />
               </div>
             )}
 
@@ -967,17 +867,13 @@
 
             {activeTab === 'account' && (
               <div className="pt-24 px-6 md:px-12 flex flex-col items-center justify-center h-[75vh] animate-fade-in">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-violet-600 to-fuchsia-500 mb-6 shadow-lg shadow-violet-500/20"></div>
+                <div className="w-24 h-24 rounded-full bg-neutral-800 mb-6"></div>
                 <h2 className="text-2xl font-bold mb-2">User Profile</h2>
-                <button className="border border-gray-300 dark:border-gray-700 px-6 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors mt-4">
-                  Sign Out
-                </button>
               </div>
             )}
           </main>
 
           <Footer />
-
           <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
           {fullscreenShort && (
@@ -997,16 +893,12 @@
       );
     };
 
-    function App() {
-      return (
-        <ThemeProvider>
-          <MainApp />
-        </ThemeProvider>
-      );
-    }
-
     const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
+    root.render(
+      <ThemeProvider>
+        <MainApp />
+      </ThemeProvider>
+    );
   </script>
 </body>
 </html>
