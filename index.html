@@ -63,169 +63,154 @@
   <script type="text/babel" data-type="module">
     import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
     import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     import { 
       Home, Play, Plus, User, Smartphone, Info, Sun, Moon, 
-      Search, ChevronRight, ChevronLeft, Maximize2, Film, X 
+      Search, ChevronRight, ChevronLeft, Maximize2, Film, X,
+      Edit3, Trash2, LogOut, ShieldCheck
     } from 'https://esm.sh/lucide-react@0.344.0?deps=react@18.2.0';
 
-    const CATEGORIES = ["All", "Kategori 1", "Kategori 2", "Kategori 3"];
+    // =================================================================
+    // 1. KONFIGURASI SUPABASE & DAFTAR EMAIL ADMIN
+    // =================================================================
+    const SUPABASE_URL = 'https://wjxgwnekpskwgsscjptt.supabase.co';
+    const SUPABASE_PUBLIC_KEY = 'sb_publishable_783OBGYwk2zKrIDskGAKfg_lAscLdhU';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
 
-    // Embed YouTube untuk semua konten Landscape
+    // MASUKKAN EMAIL GOOGLE ADMIN DI SINI (Huruf kecil semua):
+    const ADMIN_EMAILS = [
+      'luminanze.team@gmail.com',
+      'emailkamu@gmail.com' // <-- Ganti/tambah dengan email Google yang kamu pakai login!
+    ];
+
+    // =================================================================
+    // 2. HELPER PINTAR: KONVERSI LINK GOOGLE DRIVE, YOUTUBE, & MP4
+    // =================================================================
+    const getYouTubeId = (url) => {
+      if (!url) return null;
+      const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+      return match ? match[1] : null;
+    };
+
+    const getDriveFileId = (url) => {
+      if (!url) return null;
+      const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+      return match ? match[1] : null;
+    };
+
+    // Menentukan apakah URL berupa Embed (YouTube / Google Drive) atau Direct Video MP4
+    const resolveMediaSource = (itemOrUrl) => {
+      const rawUrl = typeof itemOrUrl === 'string' 
+        ? itemOrUrl 
+        : (itemOrUrl?.video_url || itemOrUrl?.videoUrl || itemOrUrl?.embedUrl || '');
+
+      if (!rawUrl) return { type: 'none', url: '' };
+
+      const ytId = getYouTubeId(rawUrl);
+      if (ytId) {
+        return { type: 'youtube', url: `https://www.youtube.com/embed/${ytId}?enablejsapi=1` };
+      }
+
+      const driveId = getDriveFileId(rawUrl);
+      if (driveId) {
+        return { 
+          type: 'drive', 
+          embedUrl: `https://drive.google.com/file/d/${driveId}/preview`,
+          directUrl: `https://drive.google.com/uc?export=download&id=${driveId}`
+        };
+      }
+
+      return { type: 'mp4', url: rawUrl };
+    };
+
+    // =================================================================
+    // 3. DATA AWAL / POLOSAN (Tampil jika Database Supabase masih kosong)
+    // =================================================================
+    const DEFAULT_CATEGORIES = ["All", "Kategori 1", "Kategori 2", "Kategori 3"];
     const YOUTUBE_EMBED_URL = "https://www.youtube.com/embed/sG9m4Twc-ko?si=LDZ3AKqac91nPynB";
     const YOUTUBE_VIDEO_ID = "sG9m4Twc-ko";
 
-    // Hero Banner Polosan
     const HERO_CONTENT = {
       title: "Judul Konten Utama",
       description: "Deskripsi singkat konten utama. Silakan ganti teks ini dengan sinopsis atau informasi proyek Anda."
     };
 
-    // Chapter Polosan
     const DEFAULT_CHAPTERS = [
-      { id: 1, title: 'Chapter 1', duration: '00:00', desc: 'Deskripsi chapter 1.' },
-      { id: 2, title: 'Chapter 2', duration: '00:00', desc: 'Deskripsi chapter 2.' },
-      { id: 3, title: 'Chapter 3', duration: '00:00', desc: 'Deskripsi chapter 3.' }
+      { id: 1, title: 'Chapter 1', duration: '00:00', desc: 'Deskripsi chapter 1.', url: '' },
+      { id: 2, title: 'Chapter 2', duration: '00:00', desc: 'Deskripsi chapter 2.', url: '' },
+      { id: 3, title: 'Chapter 3', duration: '00:00', desc: 'Deskripsi chapter 3.', url: '' }
     ];
 
-    // Data Polosan (Landscape menggunakan YouTube Embed Anda)
-    const GALLERY_DATA = {
-      shorts: [
-        { 
-          id: 'v1', 
-          type: 'short',
-          category: 'Kategori 1',
-          title: 'Judul Short 1', 
-          description: 'Deskripsi konten short 1.', 
-          img: '',
-          videoUrl: '',
-          chapters: DEFAULT_CHAPTERS
-        },
-        { 
-          id: 'v2', 
-          type: 'short',
-          category: 'Kategori 2',
-          title: 'Judul Short 2', 
-          description: 'Deskripsi konten short 2.', 
-          img: '',
-          videoUrl: '',
-          chapters: DEFAULT_CHAPTERS
-        },
-        { 
-          id: 'v3', 
-          type: 'short',
-          category: 'Kategori 3',
-          title: 'Judul Short 3', 
-          description: 'Deskripsi konten short 3.', 
-          img: '',
-          videoUrl: '',
-          chapters: DEFAULT_CHAPTERS
-        },
-        { 
-          id: 'v4', 
-          type: 'short',
-          category: 'Kategori 1',
-          title: 'Judul Short 4', 
-          description: 'Deskripsi konten short 4.', 
-          img: '',
-          videoUrl: '',
-          chapters: DEFAULT_CHAPTERS
-        }
-      ],
-      series: [
-        { 
-          id: 'h1', 
-          type: 'series',
-          category: 'Kategori 1',
-          title: 'Judul Landscape 1', 
-          description: 'Deskripsi konten landscape 1.', 
-          img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
-          embedUrl: YOUTUBE_EMBED_URL,
-          chapters: DEFAULT_CHAPTERS
-        },
-        { 
-          id: 'h2', 
-          type: 'series',
-          category: 'Kategori 2',
-          title: 'Judul Landscape 2', 
-          description: 'Deskripsi konten landscape 2.', 
-          img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
-          embedUrl: YOUTUBE_EMBED_URL,
-          chapters: DEFAULT_CHAPTERS
-        },
-        { 
-          id: 'h3', 
-          type: 'series',
-          category: 'Kategori 3',
-          title: 'Judul Landscape 3', 
-          description: 'Deskripsi konten landscape 3.', 
-          img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
-          embedUrl: YOUTUBE_EMBED_URL,
-          chapters: DEFAULT_CHAPTERS
-        },
-        { 
-          id: 'h4', 
-          type: 'series',
-          category: 'Kategori 1',
-          title: 'Judul Landscape 4', 
-          description: 'Deskripsi konten landscape 4.', 
-          img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`,
-          embedUrl: YOUTUBE_EMBED_URL,
-          chapters: DEFAULT_CHAPTERS
-        }
-      ]
-    };
+    const INITIAL_GALLERY_DATA = [
+      { id: 'v1', type: 'short', category: 'Kategori 1', title: 'Judul Short 1', description: 'Deskripsi konten short 1.', img: '', video_url: '', chapters: DEFAULT_CHAPTERS },
+      { id: 'v2', type: 'short', category: 'Kategori 2', title: 'Judul Short 2', description: 'Deskripsi konten short 2.', img: '', video_url: '', chapters: DEFAULT_CHAPTERS },
+      { id: 'v3', type: 'short', category: 'Kategori 3', title: 'Judul Short 3', description: 'Deskripsi konten short 3.', img: '', video_url: '', chapters: DEFAULT_CHAPTERS },
+      { id: 'v4', type: 'short', category: 'Kategori 1', title: 'Judul Short 4', description: 'Deskripsi konten short 4.', img: '', video_url: '', chapters: DEFAULT_CHAPTERS },
+      { id: 'h1', type: 'series', category: 'Kategori 1', title: 'Judul Landscape 1', description: 'Deskripsi konten landscape 1.', img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`, video_url: YOUTUBE_EMBED_URL, chapters: DEFAULT_CHAPTERS },
+      { id: 'h2', type: 'series', category: 'Kategori 2', title: 'Judul Landscape 2', description: 'Deskripsi konten landscape 2.', img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`, video_url: YOUTUBE_EMBED_URL, chapters: DEFAULT_CHAPTERS },
+      { id: 'h3', type: 'series', category: 'Kategori 3', title: 'Judul Landscape 3', description: 'Deskripsi konten landscape 3.', img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`, video_url: YOUTUBE_EMBED_URL, chapters: DEFAULT_CHAPTERS },
+      { id: 'h4', type: 'series', category: 'Kategori 1', title: 'Judul Landscape 4', description: 'Deskripsi konten landscape 4.', img: `https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/hqdefault.jpg`, video_url: YOUTUBE_EMBED_URL, chapters: DEFAULT_CHAPTERS }
+    ];
 
+    // =================================================================
+    // 4. MODAL DETAIL (SINOPSIS, CHAPTER & PLAYER DRIVE/YOUTUBE/MP4)
+    // =================================================================
     const DetailModal = ({ item, onClose, onOpenFullscreenShort }) => {
       const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
+      const [customPlayUrl, setCustomPlayUrl] = useState(null);
 
       useEffect(() => {
         setIsPlayingTrailer(false);
+        setCustomPlayUrl(null);
       }, [item]);
 
       if (!item) return null;
 
       const chapters = item.chapters || [];
+      const activeSource = resolveMediaSource(customPlayUrl || item);
+
+      const handlePlayChapter = (chapUrl) => {
+        if (chapUrl) setCustomPlayUrl(chapUrl);
+        setIsPlayingTrailer(true);
+      };
 
       return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-12">
-          <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" 
-            onClick={onClose}
-          ></div>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
           
           <div className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-[#121212] rounded-2xl overflow-hidden shadow-2xl animate-zoom-in-modal flex flex-col border border-gray-200 dark:border-gray-800">
             
-            <button 
-              onClick={onClose} 
-              className="absolute top-4 right-4 z-30 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full backdrop-blur-md transition-all hover:scale-110"
-            >
+            <button onClick={onClose} className="absolute top-4 right-4 z-30 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full backdrop-blur-md transition-all hover:scale-110">
               <Plus size={24} className="rotate-45" />
             </button>
 
-            {/* Header Modal: Render Iframe YouTube jika Landscape / diputar */}
+            {/* Header Modal: Render Iframe YouTube / Google Drive / MP4 */}
             <div className="relative w-full aspect-video max-h-96 shrink-0 bg-neutral-900">
               {isPlayingTrailer ? (
                 <div className="relative w-full h-full">
-                  {item.embedUrl ? (
+                  {activeSource.type === 'youtube' ? (
                     <iframe
                       className="w-full h-full"
-                      src={`${item.embedUrl}&autoplay=1`}
+                      src={`${activeSource.url}&autoplay=1`}
                       title="YouTube video player"
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="strict-origin-when-cross-origin"
                       allowFullScreen
                     ></iframe>
-                  ) : item.videoUrl ? (
-                    <video 
-                      src={item.videoUrl} 
-                      controls 
-                      autoPlay 
-                      className="w-full h-full object-contain bg-black"
-                    />
+                  ) : activeSource.type === 'drive' ? (
+                    <iframe
+                      className="w-full h-full"
+                      src={activeSource.embedUrl}
+                      title="Google Drive video player"
+                      frameBorder="0"
+                      allow="autoplay; fullscreen"
+                      allowFullScreen
+                    ></iframe>
+                  ) : activeSource.type === 'mp4' ? (
+                    <video src={activeSource.url} controls autoPlay className="w-full h-full object-contain bg-black" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                      Belum ada video (Polosan)
+                      Belum ada link video yang dimasukkan
                     </div>
                   )}
                   <button
@@ -255,7 +240,7 @@
                     </h2>
                     <div className="flex flex-wrap items-center gap-3 md:gap-4">
                       <button 
-                        onClick={() => setIsPlayingTrailer(true)}
+                        onClick={() => { setCustomPlayUrl(null); setIsPlayingTrailer(true); }}
                         className="flex items-center gap-2 bg-white text-black px-6 py-2 md:py-2.5 rounded-md font-bold hover:bg-gray-200 transition-colors shadow-lg"
                       >
                         <Play size={18} fill="currentColor" /> Play Video
@@ -295,15 +280,15 @@
               </h3>
               
               <div className="flex flex-col gap-2">
-                {chapters.map((chap) => (
+                {chapters.map((chap, index) => (
                   <div 
-                    key={chap.id} 
-                    onClick={() => setIsPlayingTrailer(true)}
+                    key={chap.id || index} 
+                    onClick={() => handlePlayChapter(chap.url)}
                     className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-[#222] hover:border-violet-500/50 hover:bg-gray-50 dark:hover:bg-[#1a1a1a] transition-all cursor-pointer group"
                   >
                     <div className="flex items-center gap-4 md:gap-6">
                       <span className="text-xl md:text-2xl font-bold text-gray-400 dark:text-gray-600 group-hover:text-violet-500 transition-colors w-6 text-center">
-                        {chap.id}
+                        {index + 1}
                       </span>
                       <div>
                         <h4 className="font-semibold text-gray-900 dark:text-white group-hover:text-violet-500 transition-colors mb-0.5">
@@ -327,6 +312,243 @@
       );
     };
 
+    // =================================================================
+    // 5. MODAL FORM INPUT & EDIT VIDEO (KHUSUS ADMIN)
+    // =================================================================
+    const AdminFormModal = ({ isOpen, onClose, initialData, onSaved }) => {
+      const [formData, setFormData] = useState({
+        type: 'short',
+        category: 'Kategori 1',
+        title: '',
+        description: '',
+        img: '',
+        video_url: '',
+        chapters: [{ id: 1, title: 'Chapter 1', duration: '05:00', desc: 'Episode 1', url: '' }]
+      });
+      const [saving, setSaving] = useState(false);
+
+      useEffect(() => {
+        if (initialData) {
+          setFormData({
+            type: initialData.type || 'short',
+            category: initialData.category || 'Kategori 1',
+            title: initialData.title || '',
+            description: initialData.description || '',
+            img: initialData.img || '',
+            video_url: initialData.video_url || initialData.videoUrl || initialData.embedUrl || '',
+            chapters: initialData.chapters?.length ? initialData.chapters : [{ id: 1, title: 'Chapter 1', duration: '05:00', desc: '', url: '' }]
+          });
+        } else {
+          setFormData({
+            type: 'short',
+            category: 'Kategori 1',
+            title: '',
+            description: '',
+            img: '',
+            video_url: '',
+            chapters: [{ id: 1, title: 'Chapter 1', duration: '05:00', desc: 'Deskripsi chapter 1', url: '' }]
+          });
+        }
+      }, [initialData, isOpen]);
+
+      if (!isOpen) return null;
+
+      // Otomatis ambil thumbnail jika link video adalah YouTube dan kolom img masih kosong
+      const handleVideoUrlChange = (url) => {
+        const ytId = getYouTubeId(url);
+        let newImg = formData.img;
+        if (ytId && !formData.img) {
+          newImg = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+        }
+        setFormData({ ...formData, video_url: url, img: newImg });
+      };
+
+      const addChapter = () => {
+        const nextId = formData.chapters.length + 1;
+        setFormData({
+          ...formData,
+          chapters: [...formData.chapters, { id: nextId, title: `Chapter ${nextId}`, duration: '05:00', desc: `Deskripsi chapter ${nextId}`, url: '' }]
+        });
+      };
+
+      const updateChapter = (idx, field, val) => {
+        const updated = [...formData.chapters];
+        updated[idx][field] = val;
+        setFormData({ ...formData, chapters: updated });
+      };
+
+      const removeChapter = (idx) => {
+        setFormData({ ...formData, chapters: formData.chapters.filter((_, i) => i !== idx) });
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+
+        const payload = {
+          type: formData.type,
+          category: formData.category,
+          title: formData.title,
+          description: formData.description,
+          img: formData.img,
+          video_url: formData.video_url,
+          chapters: formData.chapters
+        };
+
+        let error;
+        // Jika edit data yang sudah ada di Supabase (id berupa angka)
+        if (initialData && typeof initialData.id === 'number') {
+          ({ error } = await supabase.from('lumiz_catalog').update(payload).eq('id', initialData.id));
+        } else {
+          ({ error } = await supabase.from('lumiz_catalog').insert([payload]));
+        }
+
+        setSaving(false);
+        if (error) {
+          alert('Gagal menyimpan ke Supabase: ' + error.message + '\n\nPastikan tabel lumiz_catalog sudah dibuat dan email kamu terdaftar di Policy SQL.');
+        } else {
+          onSaved();
+          onClose();
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#141414] border border-gray-200 dark:border-violet-500/30 rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-200 dark:border-gray-800">
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
+                {initialData && typeof initialData.id === 'number' ? '✏️ Edit Konten Lumiz' : '+ Upload Konten Baru ke Database'}
+              </h3>
+              <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs md:text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold mb-1 text-gray-600 dark:text-gray-300">Format Tayangan</label>
+                  <select 
+                    value={formData.type} 
+                    onChange={e => setFormData({...formData, type: e.target.value})}
+                    className="w-full p-2.5 rounded-lg bg-gray-100 dark:bg-[#0a0a0a] border border-gray-300 dark:border-gray-800"
+                  >
+                    <option value="short">Shorts (Vertikal 9:16)</option>
+                    <option value="series">Series (Landscape 16:9)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1 text-gray-600 dark:text-gray-300">Kategori (Ketik bebas / pilih)</label>
+                  <input 
+                    required
+                    type="text"
+                    list="category-options"
+                    value={formData.category}
+                    onChange={e => setFormData({...formData, category: e.target.value})}
+                    placeholder="Contoh: Kategori 1 / Sci-Fi / Origin"
+                    className="w-full p-2.5 rounded-lg bg-gray-100 dark:bg-[#0a0a0a] border border-gray-300 dark:border-gray-800"
+                  />
+                  <datalist id="category-options">
+                    <option value="Kategori 1" />
+                    <option value="Kategori 2" />
+                    <option value="Kategori 3" />
+                    <option value="Origin" />
+                    <option value="Sci-Fi" />
+                    <option value="Cyberpunk" />
+                  </datalist>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1 text-gray-600 dark:text-gray-300">Judul Tayangan</label>
+                <input 
+                  required
+                  type="text"
+                  value={formData.title}
+                  onChange={e => setFormData({...formData, title: e.target.value})}
+                  placeholder="Masukkan judul video..."
+                  className="w-full p-2.5 rounded-lg bg-gray-100 dark:bg-[#0a0a0a] border border-gray-300 dark:border-gray-800"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1 text-gray-600 dark:text-gray-300">Sinopsis / Deskripsi</label>
+                <textarea 
+                  required
+                  rows="3"
+                  value={formData.description}
+                  onChange={e => setFormData({...formData, description: e.target.value})}
+                  placeholder="Masukkan sinopsis cerita..."
+                  className="w-full p-2.5 rounded-lg bg-gray-100 dark:bg-[#0a0a0a] border border-gray-300 dark:border-gray-800"
+                ></textarea>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold mb-1 text-gray-600 dark:text-gray-300">Link Video Trailer / Utama (Drive / YouTube / MP4)</label>
+                  <input 
+                    type="text"
+                    value={formData.video_url}
+                    onChange={e => handleVideoUrlChange(e.target.value)}
+                    placeholder="https://drive.google.com/... atau YouTube"
+                    className="w-full p-2.5 rounded-lg bg-gray-100 dark:bg-[#0a0a0a] border border-gray-300 dark:border-gray-800"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1 text-gray-600 dark:text-gray-300">Link Gambar Thumbnail / Poster</label>
+                  <input 
+                    type="text"
+                    value={formData.img}
+                    onChange={e => setFormData({...formData, img: e.target.value})}
+                    placeholder="https://... (Otomatis jika pakai link YouTube)"
+                    className="w-full p-2.5 rounded-lg bg-gray-100 dark:bg-[#0a0a0a] border border-gray-300 dark:border-gray-800"
+                  />
+                </div>
+              </div>
+
+              {/* Pengaturan Chapters */}
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-800">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="font-bold text-gray-700 dark:text-gray-200">Daftar Chapter / Episode</label>
+                  <button type="button" onClick={addChapter} className="px-3 py-1 rounded bg-violet-600/20 text-violet-500 font-bold text-xs hover:bg-violet-600 hover:text-white transition">
+                    + Tambah Chapter
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                  {formData.chapters.map((chap, idx) => (
+                    <div key={idx} className="p-2.5 rounded-lg bg-gray-100 dark:bg-[#0a0a0a] border border-gray-300 dark:border-gray-800 space-y-2">
+                      <div className="flex gap-2 items-center">
+                        <input type="text" value={chap.title} onChange={e => updateChapter(idx, 'title', e.target.value)} placeholder="Judul Chapter" className="w-1/2 p-1.5 rounded bg-white dark:bg-[#141414] border border-gray-300 dark:border-gray-700 text-xs" />
+                        <input type="text" value={chap.duration} onChange={e => updateChapter(idx, 'duration', e.target.value)} placeholder="Durasi (12:00)" className="w-1/4 p-1.5 rounded bg-white dark:bg-[#141414] border border-gray-300 dark:border-gray-700 text-xs" />
+                        <input type="text" value={chap.desc} onChange={e => updateChapter(idx, 'desc', e.target.value)} placeholder="Ket. singkat" className="w-1/4 p-1.5 rounded bg-white dark:bg-[#141414] border border-gray-300 dark:border-gray-700 text-xs" />
+                        {formData.chapters.length > 1 && (
+                          <button type="button" onClick={() => removeChapter(idx)} className="text-red-500 p-1 hover:bg-red-500/10 rounded">
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                      <input type="text" value={chap.url || ''} onChange={e => updateChapter(idx, 'url', e.target.value)} placeholder="Link Video Google Drive / YouTube khusus Chapter ini (Opsional)" className="w-full p-1.5 rounded bg-white dark:bg-[#141414] border border-gray-300 dark:border-gray-700 text-xs" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-800 font-semibold">Batal</button>
+                <button type="submit" disabled={saving} className="px-6 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-lg">
+                  {saving ? 'Menyimpan...' : 'Simpan ke Supabase'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    };
+
+    // =================================================================
+    // 6. TEMA & HEADER NAVIGASI
+    // =================================================================
     const ThemeContext = React.createContext();
 
     const ThemeProvider = ({ children }) => {
@@ -354,7 +576,7 @@
 
     const useTheme = () => React.useContext(ThemeContext);
 
-    const Header = ({ activeTab, setActiveTab }) => {
+    const Header = ({ activeTab, setActiveTab, isAdmin, onAddClick, user }) => {
       const [isScrolled, setIsScrolled] = useState(false);
       const { isDark, toggleTheme } = useTheme();
 
@@ -403,7 +625,15 @@
             </nav>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-4 md:gap-5">
+            {isAdmin && (
+              <button 
+                onClick={onAddClick}
+                className="hidden sm:flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md transition-all"
+              >
+                <Plus size={15} /> Tambah Video
+              </button>
+            )}
             <button className="text-gray-700 dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
               <Search size={20} />
             </button>
@@ -415,8 +645,13 @@
             </button>
             <div 
               onClick={() => setActiveTab('account')}
-              className="w-8 h-8 rounded-md bg-gradient-to-tr from-violet-600 to-fuchsia-500 cursor-pointer hidden md:block"
-            ></div>
+              title={user ? user.email : 'Login Account'}
+              className="w-8 h-8 rounded-md bg-gradient-to-tr from-violet-600 to-fuchsia-500 cursor-pointer flex items-center justify-center text-white font-bold text-xs overflow-hidden"
+            >
+              {user?.user_metadata?.avatar_url ? (
+                <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              ) : isAdmin ? 'ADM' : <User size={16} />}
+            </div>
           </div>
         </header>
       );
@@ -440,22 +675,26 @@
       );
     };
 
-    const HoverVideoCard = ({ item, isVertical, onClick }) => {
+    // =================================================================
+    // 7. KARTU VIDEO (HOVER PREVIEW + TOMBOL EDIT & HAPUS KHUSUS ADMIN)
+    // =================================================================
+    const HoverVideoCard = ({ item, isVertical, onClick, isAdmin, onEdit, onDelete }) => {
       const [isHovered, setIsHovered] = useState(false);
       const videoRef = useRef(null);
+      const media = resolveMediaSource(item);
 
       useEffect(() => {
         let playPromise;
-        if (isHovered && videoRef.current && item.videoUrl) {
+        if (isHovered && videoRef.current && (media.type === 'mp4' || media.type === 'drive')) {
           videoRef.current.currentTime = 0;
           playPromise = videoRef.current.play();
           if (playPromise !== undefined) {
             playPromise.catch(() => {});
           }
-        } else if (!isHovered && videoRef.current && item.videoUrl) {
+        } else if (!isHovered && videoRef.current) {
           videoRef.current.pause();
         }
-      }, [isHovered, item.videoUrl]);
+      }, [isHovered, media.type]);
 
       return (
         <div
@@ -466,20 +705,19 @@
           onMouseLeave={() => setIsHovered(false)}
           onClick={() => onClick(item)}
         >
-          {/* Layer 1: Jika memiliki YouTube Embed URL, tampilkan iframe saat di-hover */}
-          {item.embedUrl && isHovered ? (
+          {/* Layer 1: Preview Video Saat Hover (YouTube / Drive / MP4) */}
+          {media.type === 'youtube' && isHovered ? (
             <iframe
               className="absolute inset-0 w-full h-full z-0 pointer-events-none"
-              src={`${item.embedUrl}&autoplay=1&mute=1&controls=0&modestbranding=1`}
+              src={`${media.url}&autoplay=1&mute=1&controls=0&modestbranding=1`}
               title={item.title}
               frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             ></iframe>
-          ) : item.videoUrl ? (
+          ) : (media.type === 'mp4' || media.type === 'drive') ? (
             <video
               ref={videoRef}
-              src={item.videoUrl}
+              src={media.type === 'drive' ? media.directUrl : media.url}
               muted
               loop
               playsInline
@@ -493,7 +731,7 @@
               src={item.img}
               alt={item.title}
               className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-500 ease-in-out ${
-                isHovered && (item.embedUrl || item.videoUrl) ? 'opacity-0' : 'opacity-100'
+                isHovered && media.type !== 'none' ? 'opacity-0' : 'opacity-100'
               }`}
             />
           ) : (
@@ -510,6 +748,28 @@
               {item.category}
             </span>
           </div>
+
+          {/* Tombol Edit & Hapus Khusus Admin (Pojok Kanan Atas) */}
+          {isAdmin && (
+            <div className="absolute top-2 right-2 md:top-3 md:right-3 z-40 flex gap-1.5" onClick={e => e.stopPropagation()}>
+              <button 
+                onClick={() => onEdit(item)}
+                className="p-1.5 rounded-md bg-black/75 hover:bg-violet-600 text-white backdrop-blur-sm border border-white/15 transition"
+                title="Edit Konten"
+              >
+                <Edit3 size={14} />
+              </button>
+              {typeof item.id === 'number' && (
+                <button 
+                  onClick={() => onDelete(item.id)}
+                  className="p-1.5 rounded-md bg-black/75 hover:bg-red-600 text-white backdrop-blur-sm border border-white/15 transition"
+                  title="Hapus dari Database"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Ikon Play Center */}
           <div className={`absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
@@ -535,17 +795,20 @@
       );
     };
 
-    const StudioGallery = ({ onItemClick }) => {
+    // =================================================================
+    // 8. KOMPONEN STUDIO GALLERY, SHORTS PAGE, & SERIES PAGE
+    // =================================================================
+    const StudioGallery = ({ shorts, series, categories, onItemClick, isAdmin, onAddClick, onEditClick, onDeleteClick }) => {
       const [selectedCategory, setSelectedCategory] = useState("All");
       const verticalScrollRef = useRef(null);
 
       const filteredShorts = selectedCategory === "All" 
-        ? GALLERY_DATA.shorts 
-        : GALLERY_DATA.shorts.filter(item => item.category === selectedCategory);
+        ? shorts 
+        : shorts.filter(item => item.category === selectedCategory);
 
       const filteredSeries = selectedCategory === "All" 
-        ? GALLERY_DATA.series 
-        : GALLERY_DATA.series.filter(item => item.category === selectedCategory);
+        ? series 
+        : series.filter(item => item.category === selectedCategory);
 
       const scrollVerticalRow = (direction) => {
         if (verticalScrollRef.current) {
@@ -557,7 +820,7 @@
         }
       };
 
-      const specificCategories = CATEGORIES.filter(cat => cat !== "All");
+      const specificCategories = categories.filter(cat => cat !== "All");
 
       return (
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-12 md:py-20 space-y-16">
@@ -569,7 +832,7 @@
             </div>
 
             <div className="flex flex-wrap justify-center gap-2 md:gap-3 pt-2">
-              {CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
@@ -582,6 +845,15 @@
                   {category}
                 </button>
               ))}
+
+              {isAdmin && (
+                <button
+                  onClick={onAddClick}
+                  className="px-5 py-2 rounded-full text-xs md:text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition-all flex items-center gap-1.5"
+                >
+                  <Plus size={16} /> Upload Video Baru
+                </button>
+              )}
             </div>
           </div>
 
@@ -613,20 +885,20 @@
             >
               {filteredShorts.map((item) => (
                 <div key={item.id} className="w-[45%] sm:w-[30%] md:w-[23%] shrink-0 snap-start">
-                  <HoverVideoCard item={item} isVertical={true} onClick={onItemClick} />
+                  <HoverVideoCard item={item} isVertical={true} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Section 2: Cinematic Landscape (16:9) - Menggunakan YouTube Embed */}
+          {/* Section 2: Cinematic Landscape (16:9) */}
           <div className="space-y-6">
             <h3 className="text-sm md:text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider">
               Cinematic Landscape (16:9)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {filteredSeries.map((item) => (
-                <HoverVideoCard key={item.id} item={item} isVertical={false} onClick={onItemClick} />
+                <HoverVideoCard key={item.id} item={item} isVertical={false} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
               ))}
             </div>
           </div>
@@ -638,8 +910,9 @@
             </h3>
 
             {specificCategories.map((cat) => {
-              const catShorts = GALLERY_DATA.shorts.filter(item => item.category === cat);
-              const catSeries = GALLERY_DATA.series.filter(item => item.category === cat);
+              const catShorts = shorts.filter(item => item.category === cat);
+              const catSeries = series.filter(item => item.category === cat);
+              if (catShorts.length + catSeries.length === 0) return null;
 
               return (
                 <div key={cat} className="space-y-6">
@@ -652,16 +925,20 @@
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                    {catSeries.map((item) => (
-                      <HoverVideoCard key={item.id} item={item} isVertical={false} onClick={onItemClick} />
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                    {catShorts.map((item) => (
-                      <HoverVideoCard key={item.id} item={item} isVertical={true} onClick={onItemClick} />
-                    ))}
-                  </div>
+                  {catSeries.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                      {catSeries.map((item) => (
+                        <HoverVideoCard key={item.id} item={item} isVertical={false} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                      ))}
+                    </div>
+                  )}
+                  {catShorts.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                      {catShorts.map((item) => (
+                        <HoverVideoCard key={item.id} item={item} isVertical={true} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -671,8 +948,8 @@
       );
     };
 
-    const ShortsCatalogPage = ({ onItemClick, onOpenFullscreen }) => {
-      const specificCategories = CATEGORIES.filter(cat => cat !== "All");
+    const ShortsCatalogPage = ({ shorts, categories, onItemClick, onOpenFullscreen, isAdmin, onEditClick, onDeleteClick }) => {
+      const specificCategories = categories.filter(cat => cat !== "All");
 
       return (
         <div className="max-w-7xl mx-auto px-6 md:px-12 pt-24 pb-16 space-y-12 animate-fade-in">
@@ -683,16 +960,18 @@
                 Shorts Catalog
               </h1>
             </div>
-            <button
-              onClick={() => onOpenFullscreen(GALLERY_DATA.shorts[0])}
-              className="flex items-center gap-2 self-start md:self-auto bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all"
-            >
-              <Smartphone size={18} /> Buka Feed Layar Penuh
-            </button>
+            {shorts.length > 0 && (
+              <button
+                onClick={() => onOpenFullscreen(shorts[0])}
+                className="flex items-center gap-2 self-start md:self-auto bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all"
+              >
+                <Smartphone size={18} /> Buka Feed Layar Penuh
+              </button>
+            )}
           </div>
 
           {specificCategories.map((cat) => {
-            const items = GALLERY_DATA.shorts.filter(short => short.category === cat);
+            const items = shorts.filter(short => short.category === cat);
             if (items.length === 0) return null;
 
             return (
@@ -702,7 +981,7 @@
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
                   {items.map((item) => (
-                    <HoverVideoCard key={item.id} item={item} isVertical={true} onClick={onItemClick} />
+                    <HoverVideoCard key={item.id} item={item} isVertical={true} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
                   ))}
                 </div>
               </div>
@@ -712,8 +991,8 @@
       );
     };
 
-    const SeriesCatalogPage = ({ onItemClick }) => {
-      const specificCategories = CATEGORIES.filter(cat => cat !== "All");
+    const SeriesCatalogPage = ({ series, categories, onItemClick, isAdmin, onEditClick, onDeleteClick }) => {
+      const specificCategories = categories.filter(cat => cat !== "All");
 
       return (
         <div className="max-w-7xl mx-auto px-6 md:px-12 pt-24 pb-16 space-y-12 animate-fade-in">
@@ -725,7 +1004,7 @@
           </div>
 
           {specificCategories.map((cat) => {
-            const items = GALLERY_DATA.series.filter(ser => ser.category === cat);
+            const items = series.filter(ser => ser.category === cat);
             if (items.length === 0) return null;
 
             return (
@@ -735,7 +1014,7 @@
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   {items.map((item) => (
-                    <HoverVideoCard key={item.id} item={item} isVertical={false} onClick={onItemClick} />
+                    <HoverVideoCard key={item.id} item={item} isVertical={false} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
                   ))}
                 </div>
               </div>
@@ -745,10 +1024,10 @@
       );
     };
 
-    const ShortsView = ({ initialShort, onClose, onSelectInfo }) => {
+    const ShortsView = ({ shorts, initialShort, onClose, onSelectInfo }) => {
       const orderedShorts = initialShort
-        ? [initialShort, ...GALLERY_DATA.shorts.filter(s => s.id !== initialShort.id)]
-        : GALLERY_DATA.shorts;
+        ? [initialShort, ...shorts.filter(s => s.id !== initialShort.id)]
+        : shorts;
 
       return (
         <div className="fixed inset-0 z-[90] bg-black/95 flex justify-center items-center backdrop-blur-xl animate-fade-in">
@@ -760,28 +1039,39 @@
           </button>
 
           <div className="w-full h-[100dvh] md:h-[88vh] md:max-w-[calc(88vh*9/16)] md:rounded-2xl overflow-y-scroll snap-y snap-mandatory scrollbar-hide relative bg-neutral-900 md:border md:border-gray-800 shadow-2xl">
-            {orderedShorts.map((short) => (
-              <div key={short.id} className="h-[100dvh] md:h-full w-full snap-start snap-always relative flex items-center justify-center bg-neutral-950 overflow-hidden">
-                <span className="text-neutral-600 text-xs font-bold uppercase tracking-widest">
-                  Area Video 9:16 Polosan
-                </span>
-                <div className="absolute right-4 bottom-24 flex flex-col gap-6 items-center z-10">
-                  <button 
-                    onClick={() => onSelectInfo(short)}
-                    className="p-3 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-violet-600 transition-all"
-                  >
-                    <Info size={24} />
-                  </button>
+            {orderedShorts.map((short) => {
+              const media = resolveMediaSource(short);
+              return (
+                <div key={short.id} className="h-[100dvh] md:h-full w-full snap-start snap-always relative flex items-center justify-center bg-neutral-950 overflow-hidden">
+                  {media.type === 'drive' ? (
+                    <iframe src={media.embedUrl} className="w-full h-full border-0" allow="autoplay; fullscreen" allowFullScreen />
+                  ) : media.type === 'youtube' ? (
+                    <iframe src={`${media.url}&autoplay=1`} className="w-full h-full border-0" allow="autoplay; fullscreen" allowFullScreen />
+                  ) : media.type === 'mp4' ? (
+                    <video src={media.url} controls autoPlay loop playsInline className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-neutral-600 text-xs font-bold uppercase tracking-widest">
+                      Area Video 9:16 Polosan
+                    </span>
+                  )}
+                  <div className="absolute right-4 bottom-24 flex flex-col gap-6 items-center z-10">
+                    <button 
+                      onClick={() => onSelectInfo(short)}
+                      className="p-3 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-violet-600 transition-all"
+                    >
+                      <Info size={24} />
+                    </button>
+                  </div>
+                  <div className="absolute bottom-20 left-4 right-20 z-10 pointer-events-none">
+                    <span className="inline-block px-2 py-0.5 mb-2 text-[10px] font-bold uppercase bg-violet-600 text-white rounded">
+                      {short.category}
+                    </span>
+                    <h3 className="text-white font-bold text-lg mb-1 drop-shadow-md">{short.title}</h3>
+                    <p className="text-gray-300 text-xs drop-shadow-md">{short.description}</p>
+                  </div>
                 </div>
-                <div className="absolute bottom-20 left-4 right-20 z-10">
-                  <span className="inline-block px-2 py-0.5 mb-2 text-[10px] font-bold uppercase bg-violet-600 text-white rounded">
-                    {short.category}
-                  </span>
-                  <h3 className="text-white font-bold text-lg mb-1">{short.title}</h3>
-                  <p className="text-gray-400 text-xs">{short.description}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       );
@@ -835,40 +1125,197 @@
       );
     };
 
+    // =================================================================
+    // 9. MAIN APP (INTEGRASI SUPABASE DATABASE & GOOGLE LOGIN)
+    // =================================================================
     const MainApp = () => {
       const [activeTab, setActiveTab] = useState('home');
+      const [catalogItems, setCatalogItems] = useState(INITIAL_GALLERY_DATA);
       const [selectedItem, setSelectedItem] = useState(null);
       const [fullscreenShort, setFullscreenShort] = useState(null);
 
+      // State Auth & Admin
+      const [user, setUser] = useState(null);
+      const [adminModalOpen, setAdminModalOpen] = useState(false);
+      const [editingItem, setEditingItem] = useState(null);
+
+      const isAdmin = Boolean(user && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(user.email?.toLowerCase()));
+
+      // Ambil data dari Supabase
+      const fetchSupabaseCatalog = async () => {
+        const { data, error } = await supabase
+          .from('lumiz_catalog')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          setCatalogItems(data);
+        } else if (!error && data && data.length === 0) {
+          setCatalogItems(INITIAL_GALLERY_DATA);
+        }
+      };
+
+      useEffect(() => {
+        fetchSupabaseCatalog();
+
+        // Cek sesi login Google
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          setUser(session?.user ?? null);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          setUser(session?.user ?? null);
+        });
+
+        return () => subscription.unsubscribe();
+      }, []);
+
+      const handleGoogleLogin = async () => {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.href }
+        });
+        if (error) alert('Gagal membuka Login Google: ' + error.message);
+      };
+
+      const handleLogout = async () => {
+        await supabase.auth.signOut();
+      };
+
+      const handleDeleteItem = async (id) => {
+        if (!window.confirm('Yakin ingin menghapus konten ini dari database Lumiz?')) return;
+        const { error } = await supabase.from('lumiz_catalog').delete().eq('id', id);
+        if (error) {
+          alert('Gagal menghapus: ' + error.message);
+        } else {
+          fetchSupabaseCatalog();
+        }
+      };
+
+      const shortsList = catalogItems.filter(i => i.type === 'short');
+      const seriesList = catalogItems.filter(i => i.type === 'series');
+
+      // Gabungkan kategori bawaan dengan kategori baru dari Supabase
+      const dynamicCategories = Array.from(new Set([
+        ...DEFAULT_CATEGORIES,
+        ...catalogItems.map(i => i.category).filter(Boolean)
+      ]));
+
       return (
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-[#050505] text-gray-900 dark:text-white font-sans selection:bg-violet-500/30">
-          <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+          <Header 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            isAdmin={isAdmin}
+            user={user}
+            onAddClick={() => { setEditingItem(null); setAdminModalOpen(true); }}
+          />
 
           <main className="flex-grow pb-20 md:pb-8">
             {activeTab === 'home' && (
               <div className="animate-fade-in">
                 <HeroBanner />
-                <StudioGallery onItemClick={(item) => setSelectedItem(item)} />
+                <StudioGallery 
+                  shorts={shortsList}
+                  series={seriesList}
+                  categories={dynamicCategories}
+                  onItemClick={(item) => setSelectedItem(item)}
+                  isAdmin={isAdmin}
+                  onAddClick={() => { setEditingItem(null); setAdminModalOpen(true); }}
+                  onEditClick={(item) => { setEditingItem(item); setAdminModalOpen(true); }}
+                  onDeleteClick={handleDeleteItem}
+                />
               </div>
             )}
 
             {activeTab === 'shorts' && (
               <ShortsCatalogPage 
+                shorts={shortsList}
+                categories={dynamicCategories}
                 onItemClick={(item) => setSelectedItem(item)} 
                 onOpenFullscreen={(shortItem) => setFullscreenShort(shortItem)}
+                isAdmin={isAdmin}
+                onEditClick={(item) => { setEditingItem(item); setAdminModalOpen(true); }}
+                onDeleteClick={handleDeleteItem}
               />
             )}
 
             {activeTab === 'series' && (
               <SeriesCatalogPage 
+                series={seriesList}
+                categories={dynamicCategories}
                 onItemClick={(item) => setSelectedItem(item)} 
+                isAdmin={isAdmin}
+                onEditClick={(item) => { setEditingItem(item); setAdminModalOpen(true); }}
+                onDeleteClick={handleDeleteItem}
               />
             )}
 
             {activeTab === 'account' && (
-              <div className="pt-24 px-6 md:px-12 flex flex-col items-center justify-center h-[75vh] animate-fade-in">
-                <div className="w-24 h-24 rounded-full bg-neutral-800 mb-6"></div>
-                <h2 className="text-2xl font-bold mb-2">User Profile</h2>
+              <div className="pt-28 px-6 md:px-12 flex flex-col items-center justify-center min-h-[75vh] animate-fade-in">
+                <div className="w-full max-w-md bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-2xl p-8 text-center shadow-xl">
+                  {user ? (
+                    <>
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-violet-600 to-fuchsia-500 mx-auto mb-4 overflow-hidden flex items-center justify-center text-white font-bold text-2xl">
+                        {user.user_metadata?.avatar_url ? (
+                          <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          user.email?.[0]?.toUpperCase()
+                        )}
+                      </div>
+                      <h2 className="text-xl font-bold mb-1">{user.user_metadata?.full_name || 'User Lumiz'}</h2>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">{user.email}</p>
+
+                      {isAdmin ? (
+                        <div className="mb-6 p-3 rounded-xl bg-violet-600/15 border border-violet-500/30 text-violet-500 dark:text-violet-300 text-xs font-semibold flex items-center justify-center gap-2">
+                          <ShieldCheck size={16} /> Mode Admin Aktif (Bisa Tambah, Edit & Hapus)
+                        </div>
+                      ) : (
+                        <div className="mb-6 p-3 rounded-xl bg-gray-100 dark:bg-gray-800/60 text-gray-500 text-xs">
+                          Status: Akun Penonton Reguler
+                        </div>
+                      )}
+
+                      <div className="flex flex-col gap-3">
+                        {isAdmin && (
+                          <button 
+                            onClick={() => { setEditingItem(null); setAdminModalOpen(true); }}
+                            className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition shadow-lg"
+                          >
+                            + Upload Video Baru
+                          </button>
+                        )}
+                        <button 
+                          onClick={handleLogout}
+                          className="w-full py-2.5 rounded-xl border border-red-500/40 text-red-500 hover:bg-red-500/10 font-semibold text-sm transition flex items-center justify-center gap-2"
+                        >
+                          <LogOut size={16} /> Keluar (Sign Out)
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-20 h-20 rounded-full bg-neutral-800 mx-auto mb-5 flex items-center justify-center text-violet-500">
+                        <User size={36} />
+                      </div>
+                      <h2 className="text-2xl font-bold mb-2">
+                        Masuk ke Lumi<span className="text-violet-500" style={{ color: '#8A2BE2' }}>z</span>
+                      </h2>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">
+                        Login menggunakan akun Google Anda. Jika email terdaftar sebagai Admin Lumiztudio, tombol kelola video akan otomatis muncul.
+                      </p>
+                      <button 
+                        onClick={handleGoogleLogin}
+                        className="w-full py-3 px-6 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-black font-bold text-sm hover:opacity-90 transition flex items-center justify-center gap-3 shadow-lg"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24">
+                          <path fill="currentColor" d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27c3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10c5.35 0 9.25-3.67 9.25-9.09c0-1.15-.15-1.81-.15-1.81Z" />
+                        </svg>
+                        Login dengan Google
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </main>
@@ -878,6 +1325,7 @@
 
           {fullscreenShort && (
             <ShortsView 
+              shorts={shortsList}
               initialShort={fullscreenShort} 
               onClose={() => setFullscreenShort(null)}
               onSelectInfo={(item) => setSelectedItem(item)}
@@ -888,6 +1336,13 @@
             item={selectedItem} 
             onClose={() => setSelectedItem(null)} 
             onOpenFullscreenShort={(shortItem) => setFullscreenShort(shortItem)}
+          />
+
+          <AdminFormModal 
+            isOpen={adminModalOpen}
+            onClose={() => setAdminModalOpen(false)}
+            initialData={editingItem}
+            onSaved={fetchSupabaseCatalog}
           />
         </div>
       );
