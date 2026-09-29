@@ -31,6 +31,8 @@
     body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .card-vertical { aspect-ratio: 9 / 16; }
+    .card-horizontal { aspect-ratio: 16 / 9; }
   </style>
 </head>
 <body class="bg-[#0A0A0A] text-white selection:bg-[#8A2BE2]/40">
@@ -48,13 +50,12 @@
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
 
-    // DIKUNCI KHUSUS UNTUK EMAIL KEANO & TIM LUMINANZE
     const ADMIN_EMAILS = [
       'keano.dranantya@gmail.com',
       'luminanze.team@gmail.com'
     ];
 
-    const CATEGORIES = ['All', 'Origin', 'Cyberpunk', 'Sci-Fi', 'Action'];
+    const DEFAULT_GENRES = ['Origin', 'Animation', 'Sci-Fi', 'Action'];
 
     // ==========================================
     // 2. IKON SVG BAWAAN
@@ -74,8 +75,8 @@
     const IconTrash = () => (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
     );
-    const IconExpand = () => (
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    const IconSettings = () => (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     );
     const IconLeft = () => (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -85,36 +86,191 @@
     );
 
     // ==========================================
-    // 3. HELPER KONVERSI LINK GOOGLE DRIVE OTOMATIS
+    // 3. HELPER DETEKSI LINK GOOGLE DRIVE & YOUTUBE
     // ==========================================
     const getDriveFileId = (url) => {
       if (!url) return null;
-      const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+      if (url.includes('youtube.com') || url.includes('youtu.be')) return null;
+      const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
       return match ? match[1] : null;
     };
 
-    // Mengubah link Drive menjadi Pemutar Video Embed (untuk ditonton di Modal)
-    const getDriveEmbedUrl = (url) => {
-      const fileId = getDriveFileId(url);
-      return fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null;
+    const getYouTubeId = (url) => {
+      if (!url) return null;
+      const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      return match ? match[1] : null;
     };
 
-    // Mengubah link Drive menjadi Link Gambar Poster otomatis
-    const getPosterUrl = (url) => {
-      if (!url) return '';
-      const fileId = getDriveFileId(url);
-      return fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w1200` : url;
+    // Embed URL untuk Pemutar Utama di Modal (Bisa Drive, Bisa YouTube)
+    const getPlayerEmbedUrl = (url) => {
+      if (!url) return null;
+      const ytId = getYouTubeId(url);
+      if (ytId) {
+        return `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+      }
+      const driveId = getDriveFileId(url);
+      if (driveId) {
+        return `https://drive.google.com/file/d/${driveId}/preview`;
+      }
+      return null;
     };
 
-    // Mengubah link Drive menjadi Direct Stream untuk video trailer ukuran kecil
-    const getDirectMediaUrl = (url) => {
-      if (!url) return '';
-      const fileId = getDriveFileId(url);
-      return fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : url;
+    // Embed URL khusus untuk Hover Preview (YouTube Autoplay Muted Loop)
+    const getHoverYouTubeEmbedUrl = (url) => {
+      const ytId = getYouTubeId(url);
+      if (!ytId) return null;
+      return `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=0&modestbranding=1&loop=1&playlist=${ytId}&playsinline=1&rel=0&showinfo=0`;
+    };
+
+    // Konversi Poster (Mendukung Drive, Thumbnail YouTube otomatis, atau Link Gambar biasa)
+    const getPosterUrl = (url, fallbackYtUrl = '') => {
+      if (url) {
+        const driveId = getDriveFileId(url);
+        if (driveId) return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1200`;
+        const ytId = getYouTubeId(url);
+        if (ytId) return `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
+        return url;
+      }
+      const fallbackYtId = getYouTubeId(fallbackYtUrl);
+      if (fallbackYtId) return `https://img.youtube.com/vi/${fallbackYtId}/hqdefault.jpg`;
+      return '';
     };
 
     // ==========================================
-    // 4. MODAL DETAIL (SINOPSIS, CHAPTER & PEMUTAR DRIVE)
+    // 4. MODAL KELOLA GENRE (TAMBAH / EDIT / HAPUS GENRE)
+    // ==========================================
+    const GenreManagerModal = ({ isOpen, onClose, genres, setGenres, onCatalogUpdated }) => {
+      const [newGenre, setNewGenre] = useState('');
+      const [editingIdx, setEditingIdx] = useState(null);
+      const [editingValue, setEditingValue] = useState('');
+      const [busy, setBusy] = useState(false);
+
+      if (!isOpen) return null;
+
+      const saveGenresToLocal = (updatedList) => {
+        setGenres(updatedList);
+        localStorage.setItem('lumiz_custom_genres', JSON.stringify(updatedList));
+      };
+
+      const handleAddGenre = (e) => {
+        e.preventDefault();
+        const trimmed = newGenre.trim();
+        if (!trimmed) return;
+        if (genres.some(g => g.toLowerCase() === trimmed.toLowerCase())) {
+          alert('Genre tersebut sudah ada!');
+          return;
+        }
+        saveGenresToLocal([...genres, trimmed]);
+        setNewGenre('');
+      };
+
+      const handleSaveEdit = async (oldName) => {
+        const trimmed = editingValue.trim();
+        if (!trimmed || trimmed === oldName) {
+          setEditingIdx(null);
+          return;
+        }
+        setBusy(true);
+        // Update semua video di Supabase yang memakai nama genre lama
+        await supabase.from('lumiz_catalog').update({ category: trimmed }).eq('category', oldName);
+        const updated = genres.map(g => (g === oldName ? trimmed : g));
+        saveGenresToLocal(updated);
+        setEditingIdx(null);
+        setBusy(false);
+        onCatalogUpdated();
+      };
+
+      const handleDeleteGenre = (genreName) => {
+        if (!window.confirm(`Hapus genre "${genreName}" dari daftar filter?`)) return;
+        const updated = genres.filter(g => g !== genreName);
+        saveGenresToLocal(updated);
+      };
+
+      return (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#141414] border border-[#8A2BE2]/40 rounded-2xl max-w-md w-full p-6 text-white shadow-2xl">
+            <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-3">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <IconSettings /> Kelola Genre Lumiz
+              </h3>
+              <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-full"><IconX /></button>
+            </div>
+
+            <form onSubmit={handleAddGenre} className="flex gap-2 mb-5">
+              <input
+                type="text"
+                value={newGenre}
+                onChange={e => setNewGenre(e.target.value)}
+                placeholder="Nama genre baru (cth: Medieval, Comedy)..."
+                className="flex-1 bg-[#0A0A0A] border border-white/15 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#8A2BE2]"
+              />
+              <button type="submit" className="px-4 py-2 bg-[#8A2BE2] hover:bg-violet-700 rounded-lg text-xs font-bold whitespace-nowrap">
+                + Tambah
+              </button>
+            </form>
+
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {genres.length === 0 ? (
+                <p className="text-xs text-gray-500 text-center py-4">Belum ada genre. Tambahkan di atas.</p>
+              ) : (
+                genres.map((g, idx) => (
+                  <div key={g} className="flex items-center justify-between bg-[#0A0A0A] px-3 py-2.5 rounded-lg border border-white/10">
+                    {editingIdx === idx ? (
+                      <div className="flex items-center gap-2 flex-1 mr-2">
+                        <input
+                          type="text"
+                          value={editingValue}
+                          onChange={e => setEditingValue(e.target.value)}
+                          className="flex-1 bg-[#141414] border border-[#8A2BE2] rounded px-2 py-1 text-xs text-white"
+                          autoFocus
+                        />
+                        <button
+                          disabled={busy}
+                          onClick={() => handleSaveEdit(g)}
+                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 rounded text-[11px] font-bold"
+                        >
+                          Simpan
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-semibold text-gray-200">{g}</span>
+                    )}
+
+                    {editingIdx !== idx && (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => { setEditingIdx(idx); setEditingValue(g); }}
+                          className="p-1.5 rounded bg-white/5 hover:bg-[#8A2BE2] text-gray-300 hover:text-white transition"
+                          title="Ubah Nama Genre"
+                        >
+                          <IconEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteGenre(g)}
+                          className="p-1.5 rounded bg-white/5 hover:bg-red-600 text-gray-300 hover:text-white transition"
+                          title="Hapus Genre"
+                        >
+                          <IconTrash />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-white/10 flex justify-end">
+              <button onClick={onClose} className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-bold">
+                Selesai
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 5. MODAL DETAIL (PEMUTAR VIDEO DRIVE & YOUTUBE)
     // ==========================================
     const DetailModal = ({ item, onClose }) => {
       const [activeVideoUrl, setActiveVideoUrl] = useState(null);
@@ -130,28 +286,34 @@
       ];
 
       const currentUrl = activeVideoUrl || chapters[0]?.drive_url || item.video_url;
-      const driveEmbed = getDriveEmbedUrl(currentUrl);
+      const embedUrl = getPlayerEmbedUrl(currentUrl);
 
       return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-12">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-10">
           <div className="absolute inset-0 bg-black/85 backdrop-blur-md" onClick={onClose}></div>
           
-          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#121212] border border-white/15 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+          <div className="relative w-full max-w-4xl max-h-[92vh] bg-[#121212] border border-white/15 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
             
-            <button onClick={onClose} className="absolute top-4 right-4 z-30 p-2 bg-black/60 hover:bg-[#8A2BE2] text-white rounded-full backdrop-blur-md transition-all">
+            <button onClick={onClose} className="absolute top-4 right-4 z-30 p-2 bg-black/70 hover:bg-[#8A2BE2] text-white rounded-full backdrop-blur-md transition-all">
               <IconX />
             </button>
 
             <div className="relative w-full aspect-video bg-black shrink-0">
               {activeVideoUrl ? (
-                driveEmbed ? (
-                  <iframe src={driveEmbed} className="w-full h-full border-0" allow="autoplay; fullscreen" allowFullScreen title={item.title} />
+                embedUrl ? (
+                  <iframe
+                    src={embedUrl}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    title={item.title}
+                  />
                 ) : (
                   <video src={currentUrl} controls autoPlay className="w-full h-full object-contain" />
                 )
               ) : (
                 <>
-                  <img src={getPosterUrl(item.img)} alt={item.title} className="w-full h-full object-cover opacity-80" />
+                  <img src={getPosterUrl(item.img, item.video_url)} alt={item.title} className="w-full h-full object-cover opacity-80" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-black/40 to-transparent"></div>
                   <div className="absolute bottom-6 left-6 md:left-10 z-10 right-6">
                     <span className="inline-block text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-[#8A2BE2] text-white mb-2">
@@ -164,7 +326,7 @@
                       onClick={() => setActiveVideoUrl(chapters[0]?.drive_url || item.video_url)}
                       className="flex items-center gap-2 bg-[#8A2BE2] hover:bg-violet-700 text-white px-6 py-2.5 rounded-lg font-bold transition-colors shadow-lg"
                     >
-                      <IconPlay /> Putar Sekarang
+                      <IconPlay /> Putar Video Utama
                     </button>
                   </div>
                 </>
@@ -177,33 +339,40 @@
               </p>
 
               <h3 className="text-lg font-bold mb-3 text-white flex items-center justify-between border-b border-white/10 pb-2">
-                <span>Daftar Chapter / Episode</span>
+                <span>Daftar Chapter / Episode (Full Video)</span>
                 <span className="text-xs font-normal text-gray-400">{chapters.length} Bagian</span>
               </h3>
               
               <div className="flex flex-col gap-2">
-                {chapters.map((chap, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => setActiveVideoUrl(chap.drive_url || item.video_url)}
-                    className="flex items-center justify-between p-3.5 rounded-xl border border-transparent hover:border-[#8A2BE2]/50 bg-[#1a1a1a] hover:bg-violet-500/10 transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="text-xl font-black text-gray-500 group-hover:text-[#8A2BE2] w-6 text-center">
-                        {idx + 1}
-                      </span>
-                      <h4 className="font-semibold text-sm md:text-base text-white group-hover:text-[#8A2BE2] transition-colors">
-                        {chap.title}
-                      </h4>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-medium text-gray-400">{chap.duration || 'Play'}</span>
-                      <div className="p-2 rounded-full bg-[#8A2BE2]/20 text-[#8A2BE2] group-hover:bg-[#8A2BE2] group-hover:text-white transition-all">
-                        <IconPlay />
+                {chapters.map((chap, idx) => {
+                  const isPlayingThis = activeVideoUrl === (chap.drive_url || item.video_url);
+                  return (
+                    <div 
+                      key={idx} 
+                      onClick={() => setActiveVideoUrl(chap.drive_url || item.video_url)}
+                      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer group ${
+                        isPlayingThis
+                          ? 'border-[#8A2BE2] bg-[#8A2BE2]/20'
+                          : 'border-transparent hover:border-[#8A2BE2]/50 bg-[#1a1a1a] hover:bg-violet-500/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-xl font-black text-gray-500 group-hover:text-[#8A2BE2] w-6 text-center">
+                          {idx + 1}
+                        </span>
+                        <h4 className="font-semibold text-sm md:text-base text-white group-hover:text-[#8A2BE2] transition-colors">
+                          {chap.title}
+                        </h4>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-medium text-gray-400">{chap.duration || 'Play'}</span>
+                        <div className="p-2 rounded-full bg-[#8A2BE2]/20 text-[#8A2BE2] group-hover:bg-[#8A2BE2] group-hover:text-white transition-all">
+                          <IconPlay />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -212,35 +381,39 @@
     };
 
     // ==========================================
-    // 5. MODAL FORM TAMBAH & EDIT VIDEO (ADMIN)
+    // 6. MODAL FORM TAMBAH & EDIT VIDEO (ADMIN)
     // ==========================================
-    const AdminFormModal = ({ isOpen, onClose, initialData, onSaved }) => {
+    const AdminFormModal = ({ isOpen, onClose, initialData, onSaved, genres, onAddCustomGenre }) => {
       const [formData, setFormData] = useState({
-        type: 'short', category: 'Origin', title: '', description: '', img: '', video_url: '',
-        chapters: [{ id: 1, title: 'Chapter 1', duration: '02m', drive_url: '' }]
+        type: 'short', category: genres[0] || 'Origin', title: '', description: '', img: '', video_url: '',
+        chapters: [{ id: 1, title: 'Episode 1', duration: '02m', drive_url: '' }]
       });
+      const [customCategory, setCustomCategory] = useState('');
+      const [useCustomCat, setUseCustomCat] = useState(false);
       const [saving, setSaving] = useState(false);
 
       useEffect(() => {
         if (initialData) {
           setFormData({
             ...initialData,
-            chapters: initialData.chapters?.length ? initialData.chapters : [{ id: 1, title: 'Chapter 1', duration: '02m', drive_url: '' }]
+            chapters: initialData.chapters?.length ? initialData.chapters : [{ id: 1, title: 'Episode 1', duration: '02m', drive_url: '' }]
           });
+          setUseCustomCat(false);
         } else {
           setFormData({
-            type: 'short', category: 'Origin', title: '', description: '', img: '', video_url: '',
-            chapters: [{ id: 1, title: 'Chapter 1', duration: '02m', drive_url: '' }]
+            type: 'short', category: genres[0] || 'Origin', title: '', description: '', img: '', video_url: '',
+            chapters: [{ id: 1, title: 'Episode 1', duration: '02m', drive_url: '' }]
           });
+          setUseCustomCat(false);
         }
-      }, [initialData, isOpen]);
+      }, [initialData, isOpen, genres]);
 
       if (!isOpen) return null;
 
       const handleAddChapter = () => {
         setFormData({
           ...formData,
-          chapters: [...formData.chapters, { id: formData.chapters.length + 1, title: `Chapter ${formData.chapters.length + 1}`, duration: '05m', drive_url: '' }]
+          chapters: [...formData.chapters, { id: formData.chapters.length + 1, title: `Episode ${formData.chapters.length + 1}`, duration: '05m', drive_url: '' }]
         });
       };
 
@@ -257,13 +430,19 @@
       const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
+
+        const finalCategory = useCustomCat && customCategory.trim() ? customCategory.trim() : formData.category;
+        if (useCustomCat && customCategory.trim()) {
+          onAddCustomGenre(customCategory.trim());
+        }
+
         const payload = {
           type: formData.type,
-          category: formData.category,
+          category: finalCategory,
           title: formData.title,
           description: formData.description,
           img: formData.img,
-          video_url: formData.video_url || formData.chapters[0]?.drive_url || '',
+          video_url: formData.video_url,
           chapters: formData.chapters
         };
 
@@ -294,7 +473,7 @@
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-400 mb-1 font-semibold">Format Tayangan</label>
                   <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white">
@@ -303,13 +482,32 @@
                   </select>
                 </div>
                 <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">Kategori / Genre</label>
-                  <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white">
-                    <option value="Origin">Origin</option>
-                    <option value="Cyberpunk">Cyberpunk</option>
-                    <option value="Sci-Fi">Sci-Fi</option>
-                    <option value="Action">Action</option>
-                  </select>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-gray-400 font-semibold">Genre / Kategori</label>
+                    <button
+                      type="button"
+                      onClick={() => setUseCustomCat(!useCustomCat)}
+                      className="text-[11px] text-[#8A2BE2] hover:underline font-semibold"
+                    >
+                      {useCustomCat ? 'Pilih dari Daftar' : '+ Ketik Genre Baru'}
+                    </button>
+                  </div>
+                  {useCustomCat ? (
+                    <input
+                      required
+                      type="text"
+                      value={customCategory}
+                      onChange={e => setCustomCategory(e.target.value)}
+                      placeholder="Ketik nama genre baru..."
+                      className="w-full bg-[#0A0A0A] border border-[#8A2BE2] rounded-lg p-2.5 text-white"
+                    />
+                  ) : (
+                    <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white">
+                      {genres.map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
 
@@ -320,33 +518,38 @@
 
               <div>
                 <label className="block text-gray-400 mb-1 font-semibold">Sinopsis Cerita</label>
-                <textarea required rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Tulis sinopsis cerita di sini..." className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white"></textarea>
+                <textarea required rows="2" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Tulis sinopsis cerita di sini..." className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white"></textarea>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#0A0A0A]/60 p-3.5 rounded-xl border border-white/10">
                 <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">Link Gambar Poster (Drive / Web URL)</label>
-                  <input required type="url" value={formData.img} onChange={e => setFormData({...formData, img: e.target.value})} placeholder="https://drive.google.com/..." className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white" />
+                  <label className="block text-gray-300 mb-1 font-semibold text-xs">🖼️ Link Poster (Drive / Web URL)</label>
+                  <input required type="url" value={formData.img} onChange={e => setFormData({...formData, img: e.target.value})} placeholder="https://drive.google.com/..." className="w-full bg-[#141414] border border-white/15 rounded-lg p-2.5 text-xs text-white" />
+                  <span className="text-[10px] text-gray-500 mt-1 block">Gambar sampul kartu sebelum di-hover.</span>
                 </div>
                 <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">Link Video Preview Hover (Opsional)</label>
-                  <input type="url" value={formData.video_url} onChange={e => setFormData({...formData, video_url: e.target.value})} placeholder="Kosongkan jika tidak pakai hover" className="w-full bg-[#0A0A0A] border border-white/15 rounded-lg p-2.5 text-white" />
+                  <label className="block text-violet-300 mb-1 font-semibold text-xs">▶️ Link YouTube untuk Hover Trailer</label>
+                  <input type="url" value={formData.video_url} onChange={e => setFormData({...formData, video_url: e.target.value})} placeholder="https://youtube.com/shorts/... atau watch?v=..." className="w-full bg-[#141414] border border-[#8A2BE2]/50 rounded-lg p-2.5 text-xs text-white" />
+                  <span className="text-[10px] text-gray-400 mt-1 block">Otomatis berputar tanpa suara saat kartu di-hover di laptop.</span>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-white/10">
+              <div className="pt-2 border-t border-white/10">
                 <div className="flex justify-between items-center mb-2">
-                  <label className="font-bold text-gray-300">Daftar Chapter & Link Video Google Drive</label>
-                  <button type="button" onClick={handleAddChapter} className="text-xs bg-[#8A2BE2]/20 text-[#8A2BE2] border border-[#8A2BE2]/40 px-3 py-1 rounded-md hover:bg-[#8A2BE2] hover:text-white transition">
+                  <div>
+                    <label className="font-bold text-gray-200 block">🎬 Isi Video Asli (Link Google Drive / YouTube)</label>
+                    <span className="text-[11px] text-gray-400">Video penuh yang diputar saat penonton mengeklik kartu.</span>
+                  </div>
+                  <button type="button" onClick={handleAddChapter} className="text-xs bg-[#8A2BE2]/20 text-[#8A2BE2] border border-[#8A2BE2]/40 px-3 py-1.5 rounded-md hover:bg-[#8A2BE2] hover:text-white transition font-semibold">
                     + Tambah Chapter
                   </button>
                 </div>
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {formData.chapters.map((chap, idx) => (
-                    <div key={idx} className="flex gap-2 items-center bg-[#0A0A0A] p-2 rounded-lg border border-white/10">
+                    <div key={idx} className="flex gap-2 items-center bg-[#0A0A0A] p-2.5 rounded-lg border border-white/10">
                       <input required type="text" value={chap.title} onChange={e => handleChapterChange(idx, 'title', e.target.value)} placeholder="Judul Chapter" className="w-1/3 bg-transparent border-b border-white/20 p-1 text-xs focus:outline-none text-white" />
                       <input type="text" value={chap.duration} onChange={e => handleChapterChange(idx, 'duration', e.target.value)} placeholder="Durasi (02m)" className="w-16 bg-transparent border-b border-white/20 p-1 text-xs focus:outline-none text-white" />
-                      <input required type="url" value={chap.drive_url} onChange={e => handleChapterChange(idx, 'drive_url', e.target.value)} placeholder="Paste Link Share Google Drive" className="flex-1 bg-transparent border-b border-white/20 p-1 text-xs focus:outline-none text-white" />
+                      <input required type="url" value={chap.drive_url} onChange={e => handleChapterChange(idx, 'drive_url', e.target.value)} placeholder="Paste Link Google Drive / YouTube Full" className="flex-1 bg-transparent border-b border-white/20 p-1 text-xs focus:outline-none text-white" />
                       {formData.chapters.length > 1 && (
                         <button type="button" onClick={() => handleRemoveChapter(idx)} className="text-red-400 hover:text-red-300 p-1"><IconTrash /></button>
                       )}
@@ -368,54 +571,44 @@
     };
 
     // ==========================================
-    // 6. KARTU VIDEO INTERAKTIF
+    // 7. KARTU VIDEO (FIX SHORTS LAPTOP + YOUTUBE HOVER)
     // ==========================================
     const HoverVideoCard = ({ item, isVertical, onClick, isAdmin, onEdit, onDelete }) => {
       const [isHovered, setIsHovered] = useState(false);
-      const [videoReady, setVideoReady] = useState(false);
-      const videoRef = useRef(null);
 
-      useEffect(() => {
-        if (isHovered && videoRef.current && item.video_url) {
-          videoRef.current.currentTime = 0;
-          const playPromise = videoRef.current.play();
-          if (playPromise !== undefined) {
-            playPromise.then(() => setVideoReady(true)).catch(() => setVideoReady(false));
-          }
-        } else if (!isHovered && videoRef.current) {
-          videoRef.current.pause();
-          setVideoReady(false);
-        }
-      }, [isHovered, item.video_url]);
+      const hoverYtEmbed = getHoverYouTubeEmbedUrl(item.video_url);
+      const hasHoverVideo = Boolean(hoverYtEmbed);
 
       return (
         <div
-          className={`relative cursor-pointer overflow-hidden rounded-xl bg-[#141414] group shadow-md hover:shadow-xl border border-white/5 hover:border-[#8A2BE2]/80 transition-all duration-300 transform hover:-translate-y-1 ${
-            isVertical ? 'aspect-[9/16]' : 'aspect-video'
+          style={{ aspectRatio: isVertical ? '9 / 16' : '16 / 9' }}
+          className={`relative w-full cursor-pointer overflow-hidden rounded-xl bg-[#141414] group shadow-md hover:shadow-xl border border-white/10 hover:border-[#8A2BE2] transition-all duration-300 transform hover:-translate-y-1 ${
+            isVertical ? 'card-vertical' : 'card-horizontal'
           }`}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onClick={() => onClick(item)}
         >
-          {item.video_url && (
-            <video
-              ref={videoRef}
-              src={getDirectMediaUrl(item.video_url)}
-              muted
-              loop
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover z-0"
-            />
-          )}
-
+          {/* POSTER UTAMA */}
           <img
-            src={getPosterUrl(item.img)}
+            src={getPosterUrl(item.img, item.video_url)}
             alt={item.title}
-            className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-500 ease-in-out ${
-              isHovered && videoReady ? 'opacity-0' : 'opacity-100'
-            }`}
+            className="absolute inset-0 w-full h-full object-cover z-0 transition-transform duration-500 group-hover:scale-105"
           />
 
+          {/* HOVER PREVIEW YOUTUBE (AKTIF SAAT KURSOR DI ATAS KARTU) */}
+          {isHovered && hasHoverVideo && (
+            <div className="absolute inset-0 w-full h-full z-10 overflow-hidden bg-black pointer-events-none">
+              <iframe
+                src={hoverYtEmbed}
+                className="w-full h-full border-0 scale-[1.35] pointer-events-none"
+                allow="autoplay; encrypted-media"
+                title={`Preview ${item.title}`}
+              />
+            </div>
+          )}
+
+          {/* TOMBOL EDIT & HAPUS KHUSUS ADMIN */}
           {isAdmin && (
             <div className="absolute top-2.5 left-2.5 z-40 flex gap-1.5" onClick={e => e.stopPropagation()}>
               <button onClick={() => onEdit(item)} className="p-2 rounded-lg bg-black/80 hover:bg-[#8A2BE2] text-white border border-white/20 shadow-md transition" title="Edit Video">
@@ -427,23 +620,24 @@
             </div>
           )}
 
-          <div className={`absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-300 ${isHovered && videoReady ? 'opacity-0' : 'opacity-100'}`}>
+          {/* IKON PLAY TENGAH (HILANG SAAT TRAILER HOVER BERPUTAR) */}
+          <div className={`absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-300 pointer-events-none ${isHovered && hasHoverVideo ? 'opacity-0' : 'opacity-100'}`}>
             <div className="w-11 h-11 md:w-12 md:h-12 bg-black/65 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg text-white group-hover:bg-[#8A2BE2] transition-colors">
               <IconPlay />
             </div>
           </div>
 
-          <div className={`absolute top-2.5 right-2.5 z-20 transition-opacity duration-300 ${isHovered && videoReady ? 'opacity-0' : 'opacity-100'}`}>
-            <div className="w-7 h-7 bg-black/60 rounded-md flex items-center justify-center backdrop-blur-sm text-white/80 border border-white/10">
-              <IconExpand />
-            </div>
-          </div>
-
-          <div className="absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-4 flex flex-col justify-end">
+          {/* INFO JUDUL & KATEGORI DI BAWAH KARTU */}
+          <div className="absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/95 via-black/65 to-transparent p-4 flex flex-col justify-end pointer-events-none">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] font-bold uppercase tracking-wider bg-[#8A2BE2] text-white px-2 py-0.5 rounded">
                 {item.category || 'Lumiz'}
               </span>
+              {isHovered && hasHoverVideo && (
+                <span className="text-[9px] font-semibold bg-black/70 text-violet-300 border border-[#8A2BE2]/50 px-2 py-0.5 rounded">
+                  YouTube Preview
+                </span>
+              )}
             </div>
             <h3 className="text-white font-bold text-sm md:text-base drop-shadow-md truncate">{item.title}</h3>
             <p className={`text-gray-300 text-xs line-clamp-2 mt-1 transition-all duration-300 ${isHovered ? 'block' : 'hidden'}`}>
@@ -455,11 +649,13 @@
     };
 
     // ==========================================
-    // 7. STUDIO GALLERY (MURNI DATA DATABASE)
+    // 8. STUDIO GALLERY (DENGAN FILTER GENRE DINAMIS & FIX SHORTS)
     // ==========================================
-    const StudioGallery = ({ items, loading, viewMode, onItemClick, isAdmin, onAddClick, onEditClick, onDeleteClick }) => {
+    const StudioGallery = ({ items, loading, viewMode, onItemClick, isAdmin, onAddClick, onEditClick, onDeleteClick, genres, onOpenGenreModal }) => {
       const [selectedCat, setSelectedCat] = useState('All');
       const shortsScrollRef = useRef(null);
+
+      const allCategories = ['All', ...genres];
 
       const filteredItems = selectedCat === 'All' 
         ? items 
@@ -470,7 +666,7 @@
 
       const scrollShorts = (dir) => {
         if (shortsScrollRef.current) {
-          shortsScrollRef.current.scrollBy({ left: dir * 300, behavior: 'smooth' });
+          shortsScrollRef.current.scrollBy({ left: dir * 320, behavior: 'smooth' });
         }
       };
 
@@ -486,7 +682,7 @@
             </h2>
 
             <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
-              {CATEGORIES.map(cat => (
+              {allCategories.map(cat => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCat(cat)}
@@ -501,17 +697,24 @@
               ))}
 
               {isAdmin && (
-                <button
-                  onClick={onAddClick}
-                  className="ml-2 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition"
-                >
-                  <IconPlus /> Upload Video (Admin)
-                </button>
+                <>
+                  <button
+                    onClick={onOpenGenreModal}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#1f1f1f] hover:bg-[#8A2BE2] text-gray-200 hover:text-white border border-white/15 transition"
+                  >
+                    <IconSettings /> Kelola Genre
+                  </button>
+                  <button
+                    onClick={onAddClick}
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg transition"
+                  >
+                    <IconPlus /> Upload Video
+                  </button>
+                </>
               )}
             </div>
           </div>
 
-          {/* STATE LOADING ATAU KOSONG */}
           {loading ? (
             <div className="py-20 text-center text-gray-400 text-sm animate-pulse">
               Memuat katalog dari database Lumiz...
@@ -535,7 +738,7 @@
             </div>
           ) : (
             <>
-              {/* VERTICAL CONTENT (9:16) */}
+              {/* VERTICAL CONTENT (9:16) — SUDAH DIPERBAIKI UNTUK LAPTOP & HP */}
               {(viewMode === 'home' || viewMode === 'shorts') && (
                 <div className="space-y-4 relative">
                   <div className="flex items-center justify-between">
@@ -547,14 +750,14 @@
 
                   {shortsList.length === 0 ? (
                     <div className="p-8 text-center border border-white/5 rounded-xl bg-[#141414]/30 text-xs text-gray-500">
-                      Belum ada tayangan Shorts (9:16) pada kategori ini.
+                      Belum ada tayangan Shorts (9:16) pada genre ini.
                     </div>
                   ) : viewMode === 'home' ? (
                     <div className="relative">
-                      {shortsList.length > 3 && (
+                      {shortsList.length > 2 && (
                         <button 
                           onClick={() => scrollShorts(-1)}
-                          className="absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-white text-black shadow-xl flex items-center justify-center hover:scale-110 transition"
+                          className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white text-black shadow-xl items-center justify-center hover:scale-110 transition"
                         >
                           <IconLeft />
                         </button>
@@ -562,25 +765,27 @@
 
                       <div ref={shortsScrollRef} className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth py-2">
                         {shortsList.map(item => (
-                          <div key={item.id} className="min-w-[210px] sm:min-w-[250px] md:min-w-[265px]">
+                          <div key={item.id} className="w-[190px] sm:w-[220px] md:w-[250px] shrink-0">
                             <HoverVideoCard item={item} isVertical={true} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
                           </div>
                         ))}
                       </div>
 
-                      {shortsList.length > 3 && (
+                      {shortsList.length > 2 && (
                         <button 
                           onClick={() => scrollShorts(1)}
-                          className="absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-white text-black shadow-xl flex items-center justify-center hover:scale-110 transition"
+                          className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white text-black shadow-xl items-center justify-center hover:scale-110 transition"
                         >
                           <IconRight />
                         </button>
                       )}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
                       {shortsList.map(item => (
-                        <HoverVideoCard key={item.id} item={item} isVertical={true} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                        <div key={item.id} className="w-full">
+                          <HoverVideoCard item={item} isVertical={true} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                        </div>
                       ))}
                     </div>
                   )}
@@ -598,33 +803,37 @@
                   </div>
                   {seriesList.length === 0 ? (
                     <div className="p-8 text-center border border-white/5 rounded-xl bg-[#141414]/30 text-xs text-gray-500">
-                      Belum ada tayangan Series (16:9) pada kategori ini.
+                      Belum ada tayangan Series (16:9) pada genre ini.
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {seriesList.map(item => (
-                        <HoverVideoCard key={item.id} item={item} isVertical={false} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                        <div key={item.id} className="w-full">
+                          <HoverVideoCard item={item} isVertical={false} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                        </div>
                       ))}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* BARIS PER KATEGORI DI HOME */}
+              {/* BARIS PER GENRE DI HOME */}
               {viewMode === 'home' && selectedCat === 'All' && (
                 <div className="pt-8 border-t border-white/10 space-y-12">
-                  {CATEGORIES.filter(c => c !== 'All').map(categoryName => {
+                  {genres.map(categoryName => {
                     const catItems = items.filter(i => i.category?.toLowerCase() === categoryName.toLowerCase());
                     if (catItems.length === 0) return null;
                     return (
                       <div key={categoryName} className="space-y-4">
                         <h3 className="text-sm md:text-base font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[#8A2BE2]"></span>
-                          Kategori: {categoryName}
+                          Genre: {categoryName}
                         </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5 items-start">
                           {catItems.map(item => (
-                            <HoverVideoCard key={item.id} item={item} isVertical={item.type === 'short'} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                            <div key={item.id} className="w-full">
+                              <HoverVideoCard item={item} isVertical={item.type === 'short'} onClick={onItemClick} isAdmin={isAdmin} onEdit={onEditClick} onDelete={onDeleteClick} />
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -640,9 +849,9 @@
     };
 
     // ==========================================
-    // 8. HEADER & MAIN APP
+    // 9. HEADER & MAIN APP
     // ==========================================
-    const Header = ({ activeTab, setActiveTab, isAdmin, onAddClick }) => {
+    const Header = ({ activeTab, setActiveTab, isAdmin, onAddClick, onOpenGenreModal }) => {
       const [isScrolled, setIsScrolled] = useState(false);
 
       useEffect(() => {
@@ -668,11 +877,16 @@
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5">
             {isAdmin && (
-              <button onClick={onAddClick} className="flex items-center gap-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg transition shadow-lg">
-                <IconPlus /> Upload Video
-              </button>
+              <>
+                <button onClick={onOpenGenreModal} className="hidden sm:flex items-center gap-1 text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition">
+                  <IconSettings /> Genre
+                </button>
+                <button onClick={onAddClick} className="flex items-center gap-1 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg transition shadow-lg">
+                  <IconPlus /> Upload
+                </button>
+              </>
             )}
             <div onClick={() => setActiveTab('account')} className="px-3.5 py-1.5 rounded-lg bg-[#8A2BE2] hover:bg-violet-700 flex items-center justify-center text-white font-bold text-xs cursor-pointer shadow-md transition">
               {isAdmin ? 'ADMIN' : 'Account'}
@@ -690,7 +904,18 @@
       
       const [user, setUser] = useState(null);
       const [adminModalOpen, setAdminModalOpen] = useState(false);
+      const [genreModalOpen, setGenreModalOpen] = useState(false);
       const [editingItem, setEditingItem] = useState(null);
+
+      // Inisialisasi daftar Genre dari LocalStorage atau Default
+      const [genres, setGenres] = useState(() => {
+        try {
+          const saved = localStorage.getItem('lumiz_custom_genres');
+          return saved ? JSON.parse(saved) : DEFAULT_GENRES;
+        } catch {
+          return DEFAULT_GENRES;
+        }
+      });
 
       const isAdmin = user && ADMIN_EMAILS.includes(user.email?.toLowerCase());
 
@@ -703,8 +928,29 @@
 
         if (!error && data) {
           setCatalog(data);
+          // Gabungkan genre yang ada di database agar tidak ada kategori video yang tertinggal
+          const dbCategories = [...new Set(data.map(i => i.category).filter(Boolean))];
+          setGenres(prev => {
+            const merged = [...prev];
+            dbCategories.forEach(c => {
+              if (!merged.some(g => g.toLowerCase() === c.toLowerCase())) {
+                merged.push(c);
+              }
+            });
+            localStorage.setItem('lumiz_custom_genres', JSON.stringify(merged));
+            return merged;
+          });
         }
         setLoading(false);
+      };
+
+      const handleAddCustomGenre = (newCat) => {
+        setGenres(prev => {
+          if (prev.some(g => g.toLowerCase() === newCat.toLowerCase())) return prev;
+          const updated = [...prev, newCat];
+          localStorage.setItem('lumiz_custom_genres', JSON.stringify(updated));
+          return updated;
+        });
       };
 
       useEffect(() => {
@@ -744,7 +990,6 @@
         }
       };
 
-      // Hero Banner otomatis mengambil tayangan terbaru yang di-upload Admin
       const featuredHero = catalog.length > 0 ? catalog[0] : null;
 
       return (
@@ -754,17 +999,17 @@
             activeTab={activeTab} 
             setActiveTab={setActiveTab} 
             isAdmin={isAdmin} 
-            onAddClick={() => { setEditingItem(null); setAdminModalOpen(true); }} 
+            onAddClick={() => { setEditingItem(null); setAdminModalOpen(true); }}
+            onOpenGenreModal={() => setGenreModalOpen(true)}
           />
 
           <main className="pb-24 md:pb-12">
             {activeTab === 'home' && (
               <div>
-                {/* HERO BANNER DINAMIS */}
                 <div className="relative w-full h-[50vh] md:h-[68vh] overflow-hidden bg-gradient-to-br from-[#141414] via-[#0A0A0A] to-[#1a0933] border-b border-white/5">
                   {featuredHero ? (
                     <>
-                      <img src={getPosterUrl(featuredHero.img)} alt={featuredHero.title} className="absolute inset-0 w-full h-full object-cover opacity-45" />
+                      <img src={getPosterUrl(featuredHero.img, featuredHero.video_url)} alt={featuredHero.title} className="absolute inset-0 w-full h-full object-cover opacity-45" />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent" />
                       <div className="absolute bottom-[12%] left-6 md:left-12 max-w-2xl z-10 pr-6">
                         <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded bg-[#8A2BE2] text-white mb-3 inline-block">
@@ -808,6 +1053,8 @@
                   onAddClick={() => { setEditingItem(null); setAdminModalOpen(true); }}
                   onEditClick={(item) => { setEditingItem(item); setAdminModalOpen(true); }}
                   onDeleteClick={handleDeleteVideo}
+                  genres={genres}
+                  onOpenGenreModal={() => setGenreModalOpen(true)}
                 />
               </div>
             )}
@@ -823,6 +1070,8 @@
                   onAddClick={() => { setEditingItem(null); setAdminModalOpen(true); }}
                   onEditClick={(item) => { setEditingItem(item); setAdminModalOpen(true); }}
                   onDeleteClick={handleDeleteVideo}
+                  genres={genres}
+                  onOpenGenreModal={() => setGenreModalOpen(true)}
                 />
               </div>
             )}
@@ -838,6 +1087,8 @@
                   onAddClick={() => { setEditingItem(null); setAdminModalOpen(true); }}
                   onEditClick={(item) => { setEditingItem(item); setAdminModalOpen(true); }}
                   onDeleteClick={handleDeleteVideo}
+                  genres={genres}
+                  onOpenGenreModal={() => setGenreModalOpen(true)}
                 />
               </div>
             )}
@@ -851,7 +1102,7 @@
 
                     {isAdmin ? (
                       <div className="mb-6 p-3 rounded-xl bg-[#8A2BE2]/20 border border-[#8A2BE2] text-xs text-violet-300 font-semibold">
-                        ✓ Status: Admin Resmi Lumiztudio. Anda memiliki akses penuh untuk menambah, mengedit, dan menghapus tayangan.
+                        ✓ Status: Admin Resmi Lumiztudio. Fitur Upload Video & Kelola Genre aktif.
                       </div>
                     ) : (
                       <div className="mb-6 p-3 rounded-xl bg-white/5 text-xs text-gray-400">
@@ -861,12 +1112,20 @@
 
                     <div className="flex flex-col gap-3">
                       {isAdmin && (
-                        <button 
-                          onClick={() => { setEditingItem(null); setAdminModalOpen(true); }}
-                          className="w-full py-2.5 rounded-xl bg-[#8A2BE2] hover:bg-violet-700 text-white font-bold transition"
-                        >
-                          + Upload Video Baru
-                        </button>
+                        <>
+                          <button 
+                            onClick={() => { setEditingItem(null); setAdminModalOpen(true); }}
+                            className="w-full py-2.5 rounded-xl bg-[#8A2BE2] hover:bg-violet-700 text-white font-bold transition"
+                          >
+                            + Upload Video Baru
+                          </button>
+                          <button 
+                            onClick={() => setGenreModalOpen(true)}
+                            className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition"
+                          >
+                            ⚙️ Kelola Daftar Genre
+                          </button>
+                        </>
                       )}
                       <button onClick={handleLogout} className="w-full py-2.5 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-500/10 font-semibold transition">
                         Keluar (Sign Out)
@@ -911,6 +1170,16 @@
             onClose={() => setAdminModalOpen(false)} 
             initialData={editingItem}
             onSaved={fetchCatalog}
+            genres={genres}
+            onAddCustomGenre={handleAddCustomGenre}
+          />
+
+          <GenreManagerModal
+            isOpen={genreModalOpen}
+            onClose={() => setGenreModalOpen(false)}
+            genres={genres}
+            setGenres={setGenres}
+            onCatalogUpdated={fetchCatalog}
           />
         </div>
       );
